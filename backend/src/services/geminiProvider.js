@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { GoogleGenAI } from "@google/genai";
 
 const apiKey = process.env.GEMINI_API_KEY;
@@ -10,7 +11,8 @@ const ai = new GoogleGenAI({
   apiKey,
 });
 
-const DEFAULT_MODEL = process.env.GEMINI_MODEL || "gemini-3.7-flash";
+const DEFAULT_MODEL =
+  process.env.GEMINI_MODEL || "gemini-3.6-flash";
 
 const sleep = (ms) =>
   new Promise((resolve) => setTimeout(resolve, ms));
@@ -18,19 +20,12 @@ const sleep = (ms) =>
 const isRetryableError = (error) => {
   const status = error?.status ?? error?.code;
 
-  return (
-    status === 429 ||
-    status === 500 ||
-    status === 502 ||
-    status === 503 ||
-    status === 504
-  );
+  return [429, 500, 502, 503, 504].includes(status);
 };
 
 export const generateGeminiContent = async ({
   prompt,
   systemInstruction,
-  responseSchema,
   model = DEFAULT_MODEL,
   maxRetries = 2,
 }) => {
@@ -38,23 +33,26 @@ export const generateGeminiContent = async ({
     throw new Error("Gemini prompt cannot be empty.");
   }
 
+  const contents = systemInstruction
+    ? `${systemInstruction}\n\n${prompt}`
+    : prompt;
+
   let lastError;
 
   for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
     try {
       const response = await ai.models.generateContent({
         model,
-        contents: prompt,
+        contents,
         config: {
-          ...(systemInstruction && {
-            systemInstruction,
-          }),
-          ...(responseSchema && {
-            responseMimeType: "application/json",
-            responseSchema,
-          }),
+          responseMimeType: "application/json",
+          temperature: 0.2,
         },
       });
+
+      if (!response?.text) {
+        throw new Error("Gemini returned an empty response.");
+      }
 
       return response;
     } catch (error) {
@@ -67,8 +65,8 @@ export const generateGeminiContent = async ({
       const delay = 1000 * 2 ** attempt;
 
       console.warn(
-        `⚠️ Gemini request failed with a retryable error. ` +
-          `Retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})...`
+        `⚠️ Gemini request failed. Retrying in ${delay}ms ` +
+          `(attempt ${attempt + 1}/${maxRetries})...`
       );
 
       await sleep(delay);
