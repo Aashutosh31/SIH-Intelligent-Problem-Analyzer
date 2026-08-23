@@ -1,7 +1,8 @@
-import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
+import express from "express";
+import cors from "cors";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
+import analysisRoutes from "./routes/analysisRoutes.js";
 
 const app = express();
 
@@ -11,9 +12,9 @@ app.use(helmet());
 app.use(
   cors({
     origin:
-      process.env.NODE_ENV === 'production'
+      process.env.NODE_ENV === "production"
         ? process.env.FRONTEND_URL
-        : '*',
+        : "*",
     optionsSuccessStatus: 200,
   })
 );
@@ -25,31 +26,33 @@ const apiLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: {
-    message: 'Too many requests from this IP, please try again later.',
+    message: "Too many requests from this IP, please try again later.",
   },
 });
 
-app.use('/api', apiLimiter);
+app.use("/api", apiLimiter);
 
-// Request parsing
 app.use(
   express.json({
-    limit: '10kb',
+    limit: "10kb",
   })
 );
 
+// Analysis API
+app.use("/api", analysisRoutes);
+
 // Root route
-app.get('/', (req, res) => {
+app.get("/", (req, res) => {
   res.status(200).json({
-    message: 'Welcome to the SIH Intelligent Problem Analyzer API',
+    message: "Welcome to the SIH Intelligent Problem Analyzer API",
   });
 });
 
 // Health check
-app.get('/api/health', (req, res) => {
+app.get("/api/health", (req, res) => {
   res.status(200).json({
-    status: 'healthy',
-    environment: process.env.NODE_ENV || 'development',
+    status: "healthy",
+    environment: process.env.NODE_ENV || "development",
   });
 });
 
@@ -58,8 +61,8 @@ app.use((err, req, res, next) => {
   console.error(err.stack);
 
   res.status(err.status || 500).json({
-    message: err.message || 'Internal Server Error',
-    ...(process.env.NODE_ENV === 'development' && {
+    message: err.message || "Internal Server Error",
+    ...(process.env.NODE_ENV === "development" && {
       stack: err.stack,
     }),
   });
