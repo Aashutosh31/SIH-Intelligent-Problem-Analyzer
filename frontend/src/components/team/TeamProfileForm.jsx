@@ -23,9 +23,7 @@ const createMemberId = () => {
     return crypto.randomUUID();
   }
 
-  return `member-${Date.now()}-${Math.random()
-    .toString(36)
-    .slice(2)}`;
+  return `member-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 };
 
 const createDefaultMember = () => ({
@@ -40,15 +38,12 @@ const normalizeProfile = (profile) => {
     ...DEFAULT_TEAM_PROFILE,
     ...profile,
     members:
-      Array.isArray(profile?.members) &&
-      profile.members.length > 0
+      Array.isArray(profile?.members) && profile.members.length > 0
         ? profile.members.map((member) => ({
             id: member.id || createMemberId(),
             name: member.name || "",
             role: member.role || "",
-            skills: Array.isArray(member.skills)
-              ? member.skills
-              : [],
+            skills: Array.isArray(member.skills) ? member.skills : [],
           }))
         : [createDefaultMember()],
     preferences: {
@@ -58,18 +53,16 @@ const normalizeProfile = (profile) => {
   };
 };
 
-export default function TeamProfileForm({
-  onSaved,
-  onCancel,
-}) {
+export default function TeamProfileForm({ onSaved, onCancel }) {
   const [profile, setProfile] = useState(
-    normalizeProfile(DEFAULT_TEAM_PROFILE)
+    normalizeProfile(DEFAULT_TEAM_PROFILE),
   );
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [skillDrafts, setSkillDrafts] = useState({});
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -80,46 +73,41 @@ export default function TeamProfileForm({
       setSuccessMessage("");
 
       try {
-        const existingProfile =
-          await fetchTeamProfile(teamId);
+        const existingProfile = await fetchTeamProfile(teamId);
 
         setProfile(
           normalizeProfile({
             ...existingProfile,
             teamId,
-          })
+          }),
         );
       } catch (loadError) {
         // A 404 simply means this team does not have
         // a profile yet. Start with the default form.
         if (
           loadError instanceof Error &&
-          loadError.message ===
-            "Team profile not found."
+          loadError.message === "Team profile not found."
         ) {
           setProfile(
             normalizeProfile({
               ...DEFAULT_TEAM_PROFILE,
               teamId,
-            })
+            }),
           );
         } else {
-          console.error(
-            "Failed to load team profile:",
-            loadError
-          );
+          console.error("Failed to load team profile:", loadError);
 
           setError(
             loadError instanceof Error
               ? loadError.message
-              : "Failed to load team profile."
+              : "Failed to load team profile.",
           );
 
           setProfile(
             normalizeProfile({
               ...DEFAULT_TEAM_PROFILE,
               teamId,
-            })
+            }),
           );
         }
       } finally {
@@ -156,7 +144,7 @@ export default function TeamProfileForm({
               ...member,
               ...updates,
             }
-          : member
+          : member,
       ),
     }));
   };
@@ -164,10 +152,7 @@ export default function TeamProfileForm({
   const addMember = () => {
     setProfile((current) => ({
       ...current,
-      members: [
-        ...current.members,
-        createDefaultMember(),
-      ],
+      members: [...current.members, createDefaultMember()],
     }));
   };
 
@@ -179,22 +164,94 @@ export default function TeamProfileForm({
 
       return {
         ...current,
-        members: current.members.filter(
-          (member) => member.id !== memberId
-        ),
+        members: current.members.filter((member) => member.id !== memberId),
       };
     });
   };
 
-  const updateMemberSkills = (memberId, value) => {
-    const skills = value
-      .split(",")
-      .map((skill) => skill.trim())
-      .filter(Boolean);
+  const setSkillDraft = (memberId, value) => {
+    setSkillDrafts((current) => ({
+      ...current,
+      [memberId]: value,
+    }));
+  };
+
+  const addSkill = (memberId) => {
+    const draft = (skillDrafts[memberId] || "").trim();
+
+    if (!draft) {
+      return;
+    }
+
+    const member = profile.members.find((item) => item.id === memberId);
+
+    if (!member) {
+      return;
+    }
+
+    const existingSkills = member.skills || [];
+
+    const alreadyExists = existingSkills.some(
+      (skill) => skill.toLowerCase() === draft.toLowerCase(),
+    );
+
+    if (alreadyExists) {
+      setSkillDraft(memberId, "");
+      return;
+    }
 
     updateMember(memberId, {
-      skills,
+      skills: [...existingSkills, draft],
     });
+
+    setSkillDraft(memberId, "");
+  };
+
+  const removeSkill = (memberId, skillToRemove) => {
+    const member = profile.members.find((item) => item.id === memberId);
+
+    if (!member) {
+      return;
+    }
+
+    updateMember(memberId, {
+      skills: member.skills.filter((skill) => skill !== skillToRemove),
+    });
+  };
+
+  const removeLastSkill = (memberId) => {
+    const draft = skillDrafts[memberId] || "";
+
+    if (draft.length > 0) {
+      return;
+    }
+
+    const member = profile.members.find((item) => item.id === memberId);
+
+    if (!member || member.skills.length === 0) {
+      return;
+    }
+
+    updateMember(memberId, {
+      skills: member.skills.slice(0, member.skills.length - 1),
+    });
+  };
+
+  const handleSkillKeyDown = (event, memberId) => {
+    if (event.key === "," || event.key === "Enter") {
+      event.preventDefault();
+      addSkill(memberId);
+      return;
+    }
+
+    if (event.key === "Backspace") {
+      const draft = skillDrafts[memberId] || "";
+
+      if (!draft) {
+        event.preventDefault();
+        removeLastSkill(memberId);
+      }
+    }
   };
 
   const handleSave = async (event) => {
@@ -211,14 +268,11 @@ export default function TeamProfileForm({
     }
 
     const incompleteMember = profile.members.find(
-      (member) =>
-        !member.name.trim() || !member.role.trim()
+      (member) => !member.name.trim() || !member.role.trim(),
     );
 
     if (incompleteMember) {
-      setError(
-        "Every team member needs a name and role."
-      );
+      setError("Every team member needs a name and role.");
       return;
     }
 
@@ -238,33 +292,27 @@ export default function TeamProfileForm({
         })),
       };
 
-      const savedProfile =
-        await saveTeamProfile(payload);
+      const savedProfile = await saveTeamProfile(payload);
 
       setProfile(
         normalizeProfile({
           ...savedProfile,
           teamId,
-        })
+        }),
       );
 
-      setSuccessMessage(
-        "Team profile saved successfully."
-      );
+      setSuccessMessage("Team profile saved successfully.");
 
       if (onSaved) {
         onSaved(savedProfile);
       }
     } catch (saveError) {
-      console.error(
-        "Failed to save team profile:",
-        saveError
-      );
+      console.error("Failed to save team profile:", saveError);
 
       setError(
         saveError instanceof Error
           ? saveError.message
-          : "Failed to save team profile."
+          : "Failed to save team profile.",
       );
     } finally {
       setIsSaving(false);
@@ -274,14 +322,9 @@ export default function TeamProfileForm({
   if (isLoading) {
     return (
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-8 flex flex-col items-center justify-center min-h-90">
-        <Loader2
-          size={32}
-          className="animate-spin text-blue-500 mb-4"
-        />
+        <Loader2 size={32} className="animate-spin text-blue-500 mb-4" />
 
-        <p className="text-sm text-slate-400">
-          Loading team profile...
-        </p>
+        <p className="text-sm text-slate-400">Loading team profile...</p>
       </div>
     );
   }
@@ -296,10 +339,7 @@ export default function TeamProfileForm({
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <UserRound
-                size={18}
-                className="text-blue-400"
-              />
+              <UserRound size={18} className="text-blue-400" />
 
               <span className="text-xs font-bold uppercase tracking-wider text-blue-400">
                 Team Profile
@@ -311,8 +351,8 @@ export default function TeamProfileForm({
             </h2>
 
             <p className="text-sm text-slate-400 mt-1">
-              This information will later be used to
-              calculate personalized team-fit scores.
+              This information will later be used to calculate personalized
+              team-fit scores.
             </p>
           </div>
 
@@ -332,19 +372,14 @@ export default function TeamProfileForm({
         {/* Error */}
         {error && (
           <div className="flex items-start gap-3 rounded-lg border border-red-900/60 bg-red-950/30 p-4">
-            <AlertCircle
-              size={18}
-              className="text-red-400 mt-0.5 shrink-0"
-            />
+            <AlertCircle size={18} className="text-red-400 mt-0.5 shrink-0" />
 
             <div>
               <p className="text-sm font-medium text-red-300">
                 Unable to save profile
               </p>
 
-              <p className="text-sm text-red-200/80 mt-1">
-                {error}
-              </p>
+              <p className="text-sm text-red-200/80 mt-1">{error}</p>
             </div>
           </div>
         )}
@@ -352,9 +387,7 @@ export default function TeamProfileForm({
         {/* Success */}
         {successMessage && (
           <div className="rounded-lg border border-emerald-900/60 bg-emerald-950/30 p-4">
-            <p className="text-sm text-emerald-300">
-              {successMessage}
-            </p>
+            <p className="text-sm text-emerald-300">{successMessage}</p>
           </div>
         )}
 
@@ -386,13 +419,10 @@ export default function TeamProfileForm({
         <section>
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-sm font-semibold text-white">
-                Team members
-              </h3>
+              <h3 className="text-sm font-semibold text-white">Team members</h3>
 
               <p className="text-xs text-slate-500 mt-1">
-                Add the people who will actually build
-                the SIH solution.
+                Add the people who will actually build the SIH solution.
               </p>
             </div>
 
@@ -420,13 +450,9 @@ export default function TeamProfileForm({
                   {profile.members.length > 1 && (
                     <button
                       type="button"
-                      onClick={() =>
-                        removeMember(member.id)
-                      }
+                      onClick={() => removeMember(member.id)}
                       className="p-2 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                      aria-label={`Remove member ${
-                        index + 1
-                      }`}
+                      aria-label={`Remove member ${index + 1}`}
                     >
                       <Trash2 size={16} />
                     </button>
@@ -487,22 +513,50 @@ export default function TeamProfileForm({
                     Skills
                   </label>
 
-                  <input
-                    id={`member-skills-${member.id}`}
-                    type="text"
-                    value={member.skills.join(", ")}
-                    onChange={(event) =>
-                      updateMemberSkills(
-                        member.id,
-                        event.target.value
-                      )
-                    }
-                    placeholder="React, Node.js, Python, Docker"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-slate-600 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
+                  <div className="w-full min-h-[46px] bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 flex flex-wrap items-center gap-2 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent">
+                    {member.skills.map((skill) => (
+                      <span
+                        key={skill}
+                        className="inline-flex items-center gap-1.5 rounded-md border border-blue-500/20 bg-blue-500/10 px-2.5 py-1 text-xs font-medium text-blue-300"
+                      >
+                        {skill}
+
+                        <button
+                          type="button"
+                          onClick={() => removeSkill(member.id, skill)}
+                          className="text-blue-400/70 hover:text-blue-200 transition-colors"
+                          aria-label={`Remove ${skill}`}
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+
+                    <input
+                      id={`member-skills-${member.id}`}
+                      type="text"
+                      value={skillDrafts[member.id] || ""}
+                      onChange={(event) =>
+                        setSkillDraft(
+                          member.id,
+                          event.target.value.replace(/,/g, ""),
+                        )
+                      }
+                      onKeyDown={(event) =>
+                        handleSkillKeyDown(event, member.id)
+                      }
+                      placeholder={
+                        member.skills.length === 0
+                          ? "Type a skill and press Enter or comma"
+                          : "Add another skill..."
+                      }
+                      className="flex-1 min-w-[180px] bg-transparent border-0 outline-none text-sm text-white placeholder:text-slate-600 py-1"
+                    />
+                  </div>
 
                   <p className="text-xs text-slate-600 mt-2">
-                    Separate skills with commas.
+                    Press Enter or comma to add a skill. Backspace on an empty
+                    field removes the last skill.
                   </p>
                 </div>
               </div>
@@ -513,10 +567,7 @@ export default function TeamProfileForm({
         {/* Preferences */}
         <section>
           <div className="flex items-center gap-2 mb-4">
-            <SlidersHorizontal
-              size={17}
-              className="text-blue-400"
-            />
+            <SlidersHorizontal size={17} className="text-blue-400" />
 
             <div>
               <h3 className="text-sm font-semibold text-white">
@@ -524,8 +575,7 @@ export default function TeamProfileForm({
               </h3>
 
               <p className="text-xs text-slate-500 mt-1">
-                These will help personalize future problem
-                recommendations.
+                These will help personalize future problem recommendations.
               </p>
             </div>
           </div>
@@ -535,14 +585,9 @@ export default function TeamProfileForm({
             <label className="flex items-start gap-3 cursor-pointer">
               <input
                 type="checkbox"
-                checked={
-                  profile.preferences.softwareOnly
-                }
+                checked={profile.preferences.softwareOnly}
                 onChange={(event) =>
-                  updatePreference(
-                    "softwareOnly",
-                    event.target.checked
-                  )
+                  updatePreference("softwareOnly", event.target.checked)
                 }
                 className="mt-1 h-4 w-4 rounded border-slate-700 bg-slate-950 text-blue-600 focus:ring-blue-500"
               />
@@ -553,8 +598,8 @@ export default function TeamProfileForm({
                 </span>
 
                 <span className="block text-xs text-slate-500 mt-1">
-                  We'll eventually use this when ranking
-                  hardware-dependent SIH problems.
+                  We'll eventually use this when ranking hardware-dependent SIH
+                  problems.
                 </span>
               </span>
             </label>
@@ -580,13 +625,11 @@ export default function TeamProfileForm({
                 min="0"
                 max="10"
                 step="1"
-                value={
-                  profile.preferences.hardwareComfort
-                }
+                value={profile.preferences.hardwareComfort}
                 onChange={(event) =>
                   updatePreference(
                     "hardwareComfort",
-                    Number(event.target.value)
+                    Number(event.target.value),
                   )
                 }
                 className="w-full accent-blue-500"
@@ -614,14 +657,9 @@ export default function TeamProfileForm({
                 min="0"
                 max="10"
                 step="1"
-                value={
-                  profile.preferences.aiMlComfort
-                }
+                value={profile.preferences.aiMlComfort}
                 onChange={(event) =>
-                  updatePreference(
-                    "aiMlComfort",
-                    Number(event.target.value)
-                  )
+                  updatePreference("aiMlComfort", Number(event.target.value))
                 }
                 className="w-full accent-blue-500"
               />
@@ -648,13 +686,11 @@ export default function TeamProfileForm({
                 min="0"
                 max="10"
                 step="1"
-                value={
-                  profile.preferences.willingnessToLearn
-                }
+                value={profile.preferences.willingnessToLearn}
                 onChange={(event) =>
                   updatePreference(
                     "willingnessToLearn",
-                    Number(event.target.value)
+                    Number(event.target.value),
                   )
                 }
                 className="w-full accent-blue-500"
@@ -684,10 +720,7 @@ export default function TeamProfileForm({
         >
           {isSaving ? (
             <>
-              <Loader2
-                size={16}
-                className="animate-spin"
-              />
+              <Loader2 size={16} className="animate-spin" />
               Saving...
             </>
           ) : (
