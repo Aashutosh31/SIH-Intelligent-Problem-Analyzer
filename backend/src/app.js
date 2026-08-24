@@ -3,6 +3,7 @@ import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import analysisRoutes from "./routes/analysisRoutes.js";
+import teamProfileRoutes from "./routes/teamProfileRoutes.js";
 
 const app = express();
 
@@ -40,6 +41,7 @@ app.use(
 
 // Analysis API
 app.use("/api", analysisRoutes);
+app.use("/api", teamProfileRoutes);
 
 // Root route
 app.get("/", (req, res) => {
