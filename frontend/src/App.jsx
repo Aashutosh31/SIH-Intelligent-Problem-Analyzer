@@ -341,9 +341,10 @@ export default function App() {
 
                 <div className="bg-slate-900 border border-slate-800 rounded-b-xl rounded-tr-xl p-6 min-h-[400px]">
                   {activeTab === "scorecard" && (
-                    <ScorecardTab
-                      scorecard={analysis.scorecard}
-                    />
+                  <ScorecardTab
+                    scorecard={analysis.scorecard}
+                    teamFit={analysis.teamFit}
+                  />
                   )}
 
                   {activeTab === "engineering" && (
