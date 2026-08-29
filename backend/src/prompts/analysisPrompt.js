@@ -70,6 +70,7 @@ Use EXACTLY this top-level structure:
   "required_skills": [
     {
       "skill": "string",
+      "canonicalSkill": "string",
       "importance": "Must Have | Good to Have | Advanced",
       "weight": 1,
       "reason": "string"
@@ -166,6 +167,53 @@ Recommend technologies based on actual requirements.
 Do not choose technologies simply because they are fashionable.
 
 REQUIRED SKILLS:
+
+For every required skill, return BOTH:
+
+1. "skill"
+   A human-readable description of the required capability.
+   This may contain implementation context, libraries, frameworks,
+   protocols, or examples.
+
+2. "canonicalSkill"
+   The single concise capability name that should be used by the
+   application for deterministic team-skill matching.
+
+Rules for canonicalSkill:
+- Use ONE capability only.
+- Keep it concise and stable.
+- Do not include parentheses.
+- Do not include implementation libraries.
+- Do not include multiple unrelated capabilities.
+- Do not copy the entire human-readable skill description.
+- Prefer a broad capability that a team member could reasonably list
+  as a skill in their profile.
+
+Examples:
+
+{
+  "skill": "Computer Vision & Deep Learning (PyTorch/OpenCV)",
+  "canonicalSkill": "Computer Vision",
+  "importance": "Must Have",
+  "weight": 10,
+  "reason": "Core capability required for visual manipulation detection."
+}
+
+{
+  "skill": "Asynchronous Backend Architecture (FastAPI/Celery/Redis)",
+  "canonicalSkill": "Asynchronous Backend Development",
+  "importance": "Must Have",
+  "weight": 8,
+  "reason": "Long-running media processing requires asynchronous job execution."
+}
+
+{
+  "skill": "Model Optimization & Inference Acceleration (ONNX/TensorRT)",
+  "canonicalSkill": "Model Optimization",
+  "importance": "Good to Have",
+  "weight": 7,
+  "reason": "Optimization is important for meeting near-real-time latency targets."
+}
 
 For every required skill:
 - identify the canonical skill name

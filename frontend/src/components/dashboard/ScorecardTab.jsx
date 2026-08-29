@@ -1,8 +1,4 @@
-import {
-  CheckCircle2,
-  AlertTriangle,
-  Target,
-} from "lucide-react";
+import { CheckCircle2, AlertTriangle, Target } from "lucide-react";
 
 import ScoreGauge from "../ui/ScoreGauge";
 
@@ -12,6 +8,7 @@ const ScorecardTab = ({ scorecard, teamFit }) => {
   }
 
   const matchedSkills = teamFit?.matchedSkills || [];
+  const partialMatches = teamFit?.partialMatches || [];
   const missingSkills = teamFit?.missingSkills || [];
   const criticalGaps = teamFit?.criticalGaps || [];
 
@@ -65,10 +62,7 @@ const ScorecardTab = ({ scorecard, teamFit }) => {
           <div className="flex items-start justify-between gap-4 mb-5">
             <div>
               <div className="flex items-center gap-2">
-                <Target
-                  size={18}
-                  className="text-blue-400"
-                />
+                <Target size={18} className="text-blue-400" />
 
                 <h3 className="text-lg font-semibold text-white">
                   Team Fit Intelligence
@@ -76,21 +70,19 @@ const ScorecardTab = ({ scorecard, teamFit }) => {
               </div>
 
               <p className="text-sm text-slate-400 mt-1">
-                Deterministic comparison of your team's skills
-                against this problem's requirements.
+                Deterministic comparison of your team's skills against this
+                problem's requirements.
               </p>
             </div>
 
             <div className="text-right shrink-0">
               <div className="text-2xl font-bold text-white">
                 {teamFit.score}
-                <span className="text-sm font-medium text-slate-500">
-                  /100
-                </span>
+                <span className="text-sm font-medium text-slate-500">/100</span>
               </div>
 
               <div className="text-xs text-slate-500 mt-1">
-                {teamFit.matchedWeight}/{teamFit.totalWeight} weight covered
+                {teamFit.coveredWeight}/{teamFit.totalWeight} weighted coverage
               </div>
             </div>
           </div>
@@ -180,16 +172,16 @@ const ScorecardTab = ({ scorecard, teamFit }) => {
               )}
             </div>
 
-            {/* Matched Skills */}
+            {/* Strong Skill Matches */}
             <div className="rounded-xl border border-emerald-900/50 bg-emerald-950/10 p-4">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h4 className="text-sm font-semibold text-white">
-                    Covered Requirements
+                    Strong Skill Matches
                   </h4>
 
                   <p className="text-xs text-slate-500 mt-1">
-                    Skills already present in your team
+                    Requirements your team covers at strong proficiency
                   </p>
                 </div>
 
@@ -200,7 +192,7 @@ const ScorecardTab = ({ scorecard, teamFit }) => {
 
               {matchedSkills.length === 0 ? (
                 <p className="text-sm text-slate-500">
-                  No required skills matched yet.
+                  No strong skill matches yet.
                 </p>
               ) : (
                 <div className="space-y-3">
@@ -210,13 +202,13 @@ const ScorecardTab = ({ scorecard, teamFit }) => {
                       className="rounded-lg bg-slate-950 border border-slate-800 p-3"
                     >
                       <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-start gap-2">
+                        <div className="flex items-start gap-2 min-w-0">
                           <CheckCircle2
                             size={16}
                             className="text-emerald-400 mt-0.5 shrink-0"
                           />
 
-                          <div>
+                          <div className="min-w-0">
                             <p className="text-sm font-medium text-slate-200">
                               {skill.skill}
                             </p>
@@ -227,9 +219,36 @@ const ScorecardTab = ({ scorecard, teamFit }) => {
                           </div>
                         </div>
 
-                        <span className="shrink-0 text-xs font-semibold text-emerald-400">
-                          {skill.weight}/10
-                        </span>
+                        <div className="shrink-0 text-right">
+                          <span className="text-xs font-semibold text-emerald-400">
+                            {skill.proficiency}/10
+                          </span>
+
+                          <p className="text-[10px] text-slate-600 mt-0.5">
+                            proficiency
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-3">
+                        <div className="h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-emerald-500"
+                            style={{
+                              width: `${skill.proficiency * 10}%`,
+                            }}
+                          />
+                        </div>
+
+                        <div className="flex justify-between mt-1">
+                          <span className="text-[10px] text-slate-600">
+                            Coverage
+                          </span>
+
+                          <span className="text-[10px] text-slate-500">
+                            {skill.coverage}/{skill.weight}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -237,6 +256,94 @@ const ScorecardTab = ({ scorecard, teamFit }) => {
               )}
             </div>
           </div>
+
+          {partialMatches.length > 0 && (
+            <div className="mt-5 rounded-xl border border-amber-900/50 bg-amber-950/10 p-4">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h4 className="text-sm font-semibold text-white">
+                    Partial Skill Matches
+                  </h4>
+
+                  <p className="text-xs text-slate-500 mt-1">
+                    Your team has some capability, but proficiency is below the
+                    strong-match threshold.
+                  </p>
+                </div>
+
+                <span className="text-xs font-semibold text-amber-400">
+                  {partialMatches.length}
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                {partialMatches.map((skill) => (
+                  <div
+                    key={skill.skill}
+                    className="rounded-lg bg-slate-950 border border-slate-800 p-3"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-2 min-w-0">
+                        <AlertTriangle
+                          size={16}
+                          className="text-amber-400 mt-0.5 shrink-0"
+                        />
+
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-slate-200">
+                            {skill.skill}
+                          </p>
+
+                          <p className="text-xs text-slate-500 mt-1">
+                            {skill.reason}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="shrink-0 text-right">
+                        <span className="text-xs font-semibold text-amber-400">
+                          {skill.proficiency}/10
+                        </span>
+
+                        <p className="text-[10px] text-slate-600 mt-0.5">
+                          proficiency
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-3">
+                      <div className="h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-amber-500"
+                          style={{
+                            width: `${skill.proficiency * 10}%`,
+                          }}
+                        />
+                      </div>
+
+                      <div className="flex justify-between mt-1">
+                        <span className="text-[10px] text-slate-600">
+                          Requirement weight: {skill.weight}/10
+                        </span>
+
+                        <span className="text-[10px] text-slate-500">
+                          Coverage: {skill.coverage}/{skill.weight}
+                        </span>
+                      </div>
+                    </div>
+
+                    {skill.importance === "Must Have" && (
+                      <div className="mt-2">
+                        <span className="text-[10px] font-medium text-red-400">
+                          Must Have
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* All Missing Skills */}
           {missingSkills.length > 0 && (
@@ -248,17 +355,13 @@ const ScorecardTab = ({ scorecard, teamFit }) => {
                   </h4>
 
                   <p className="text-xs text-slate-500 mt-1">
-                    Missing requirements that are not currently
-                    classified as critical
+                    Missing requirements that are not currently classified as
+                    critical
                   </p>
                 </div>
 
                 <span className="text-xs font-semibold text-slate-400">
-                  {Math.max(
-                    0,
-                    missingSkills.length -
-                      criticalGaps.length
-                  )}
+                  {Math.max(0, missingSkills.length - criticalGaps.length)}
                 </span>
               </div>
 
@@ -266,20 +369,14 @@ const ScorecardTab = ({ scorecard, teamFit }) => {
                 {missingSkills
                   .filter(
                     (skill) =>
-                      !criticalGaps.some(
-                        (gap) =>
-                          gap.skill === skill.skill
-                      )
+                      !criticalGaps.some((gap) => gap.skill === skill.skill),
                   )
                   .map((skill) => (
                     <div
                       key={skill.skill}
                       className="inline-flex items-center gap-2 rounded-md border border-slate-700 bg-slate-900 px-3 py-2"
                     >
-                      <AlertTriangle
-                        size={14}
-                        className="text-amber-400"
-                      />
+                      <AlertTriangle size={14} className="text-amber-400" />
 
                       <span className="text-xs text-slate-300">
                         {skill.skill}

@@ -101,22 +101,28 @@ export const normalizeGeminiAnalysis = (raw) => {
 
     teamAndSkills: {
       requiredSkills: Array.isArray(raw.required_skills)
-        ? raw.required_skills.map((skill) => ({
-            skill: typeof skill?.skill === "string" ? skill.skill : "",
-            importance:
-              skill?.importance === "Must Have" ||
-              skill?.importance === "Good to Have" ||
-              skill?.importance === "Advanced"
-                ? skill.importance
-                : "Good to Have",
-            weight: Number.isInteger(Number(skill?.weight))
-              ? Math.max(1, Math.min(10, Number(skill.weight)))
-              : 5,
-            reason:
-              typeof skill?.reason === "string"
-                ? skill.reason
-                : "Skill required by the problem requirements.",
-          }))
+        ? raw.required_skills
+            .map((skill) => ({
+              skill: typeof skill?.skill === "string" ? skill.skill.trim() : "",
+              canonicalSkill:
+                typeof skill?.canonicalSkill === "string"
+                  ? skill.canonicalSkill.trim()
+                  : "",
+              importance:
+                skill?.importance === "Must Have" ||
+                skill?.importance === "Good to Have" ||
+                skill?.importance === "Advanced"
+                  ? skill.importance
+                  : "Good to Have",
+              weight: Number.isInteger(Number(skill?.weight))
+                ? Math.max(1, Math.min(10, Number(skill.weight)))
+                : 5,
+              reason:
+                typeof skill?.reason === "string"
+                  ? skill.reason
+                  : "Skill required by the problem requirements.",
+            }))
+            .filter((skill) => skill.skill && skill.canonicalSkill)
         : [],
       recommendedComposition:
         "Determine the final team composition after the user's team profile is provided.",

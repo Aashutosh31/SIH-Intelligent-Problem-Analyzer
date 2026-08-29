@@ -1,7 +1,4 @@
-import {
-  normalizeSkills,
-  normalizeSkill,
-} from "../utils/skillNormalizer.js";
+import { normalizeSkills, normalizeSkill } from "../utils/skillNormalizer.js";
 
 const clampProficiency = (value) => {
   const numericValue = Number(value);
@@ -10,10 +7,7 @@ const clampProficiency = (value) => {
     return 5;
   }
 
-  return Math.max(
-    1,
-    Math.min(10, Math.round(numericValue))
-  );
+  return Math.max(1, Math.min(10, Math.round(numericValue)));
 };
 
 const buildTeamSkillMap = (members) => {
@@ -22,31 +16,23 @@ const buildTeamSkillMap = (members) => {
   for (const member of members || []) {
     for (const rawSkill of member.skills || []) {
       const skillName =
-        typeof rawSkill === "string"
-          ? rawSkill
-          : rawSkill?.name;
+        typeof rawSkill === "string" ? rawSkill : rawSkill?.name;
 
-      const normalizedSkillName =
-        normalizeSkill(skillName);
+      const normalizedSkillName = normalizeSkill(skillName);
 
       if (!normalizedSkillName) {
         continue;
       }
 
       const proficiency = clampProficiency(
-        typeof rawSkill === "string"
-          ? 5
-          : rawSkill?.proficiency
+        typeof rawSkill === "string" ? 5 : rawSkill?.proficiency,
       );
 
       const key = normalizedSkillName.toLowerCase();
 
       const existing = skillMap.get(key);
 
-      if (
-        !existing ||
-        proficiency > existing.proficiency
-      ) {
+      if (!existing || proficiency > existing.proficiency) {
         skillMap.set(key, {
           name: normalizedSkillName,
           proficiency,
@@ -58,62 +44,47 @@ const buildTeamSkillMap = (members) => {
   return skillMap;
 };
 
-const calculateCoverage = (
-  requiredSkill,
-  teamSkill
-) => {
+const calculateCoverage = (requiredSkill, teamSkill) => {
   if (!teamSkill) {
     return 0;
   }
 
-  const proficiency = clampProficiency(
-    teamSkill.proficiency
-  );
+  const proficiency = clampProficiency(teamSkill.proficiency);
 
-  const normalizedWeight =
-    Number(requiredSkill.weight) || 0;
+  const normalizedWeight = Number(requiredSkill.weight) || 0;
 
-  return (
-    (proficiency / 10) *
-    normalizedWeight
-  );
+  return (proficiency / 10) * normalizedWeight;
 };
 
-export const calculateTeamFit = ({
-  requiredSkills,
-  teamProfile,
-}) => {
+export const calculateTeamFit = ({ requiredSkills, teamProfile }) => {
   if (!Array.isArray(requiredSkills)) {
-    throw new Error(
-      "requiredSkills must be an array."
-    );
+    throw new Error("requiredSkills must be an array.");
   }
 
   if (!teamProfile) {
-    throw new Error(
-      "teamProfile is required."
-    );
+    throw new Error("teamProfile is required.");
   }
 
-  const teamSkillMap = buildTeamSkillMap(
-    teamProfile.members || []
-  );
+  const teamSkillMap = buildTeamSkillMap(teamProfile.members || []);
 
   const normalizedRequirements = requiredSkills
     .map((requirement) => ({
       ...requirement,
 
-      skill: normalizeSkill(
-        requirement.skill
+      skill:
+        typeof requirement.skill === "string" ? requirement.skill.trim() : "",
+
+      canonicalSkill: normalizeSkill(
+        requirement.canonicalSkill || requirement.skill,
       ),
 
-      weight:
-        Number(requirement.weight) || 0,
+      weight: Number(requirement.weight) || 0,
     }))
     .filter(
       (requirement) =>
         requirement.skill &&
-        requirement.weight > 0
+        requirement.canonicalSkill &&
+        requirement.weight > 0,
     );
 
   let totalWeight = 0;
@@ -127,15 +98,11 @@ export const calculateTeamFit = ({
   for (const requirement of normalizedRequirements) {
     totalWeight += requirement.weight;
 
-    const key =
-      requirement.skill.toLowerCase();
+    const key = requirement.canonicalSkill.toLowerCase();
 
     const teamSkill = teamSkillMap.get(key);
 
-    const coverage = calculateCoverage(
-      requirement,
-      teamSkill
-    );
+    const coverage = calculateCoverage(requirement, teamSkill);
 
     coveredWeight += coverage;
 
@@ -147,20 +114,14 @@ export const calculateTeamFit = ({
 
       missingSkills.push(missingSkill);
 
-      if (
-        requirement.importance ===
-          "Must Have" ||
-        requirement.weight >= 8
-      ) {
+      if (requirement.importance === "Must Have" || requirement.weight >= 8) {
         criticalGaps.push(missingSkill);
       }
 
       continue;
     }
 
-    const proficiency = clampProficiency(
-      teamSkill.proficiency
-    );
+    const proficiency = clampProficiency(teamSkill.proficiency);
 
     const match = {
       ...requirement,
@@ -173,35 +134,23 @@ export const calculateTeamFit = ({
     } else {
       partialMatches.push(match);
 
-      if (
-        requirement.importance ===
-          "Must Have" &&
-        proficiency < 5
-      ) {
+      if (requirement.importance === "Must Have" && proficiency < 5) {
         criticalGaps.push(match);
       }
     }
   }
 
   const score =
-    totalWeight === 0
-      ? 0
-      : Math.round(
-          (coveredWeight / totalWeight) *
-            100
-        );
+    totalWeight === 0 ? 0 : Math.round((coveredWeight / totalWeight) * 100);
 
   return {
     score,
 
     totalWeight,
 
-    coveredWeight:
-      Math.round(coveredWeight * 100) / 100,
+    coveredWeight: Math.round(coveredWeight * 100) / 100,
 
-    teamSkills: Array.from(
-      teamSkillMap.values()
-    ),
+    teamSkills: Array.from(teamSkillMap.values()),
 
     matchedSkills,
 
@@ -215,9 +164,7 @@ export const calculateTeamFit = ({
       criticalGaps.length === 0
         ? "The team covers the critical technical requirements of this problem."
         : `The team has ${criticalGaps.length} critical skill gap${
-            criticalGaps.length === 1
-              ? ""
-              : "s"
+            criticalGaps.length === 1 ? "" : "s"
           } that should be addressed before committing to the problem.`,
   };
 };

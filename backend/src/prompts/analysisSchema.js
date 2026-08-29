@@ -41,6 +41,7 @@ export const analysisZodSchema = z.object({
     requiredSkills: z.array(
       z.object({
         skill: z.string(),
+        canonicalSkill: z.string(),
         importance: z.enum(["Must Have", "Good to Have", "Advanced"]),
         weight: z.number().int().min(1).max(10),
         reason: z.string(),
