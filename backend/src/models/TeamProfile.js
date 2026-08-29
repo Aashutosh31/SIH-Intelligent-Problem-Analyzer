@@ -1,5 +1,27 @@
 import mongoose from "mongoose";
 
+const memberSkillSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 100,
+    },
+
+    proficiency: {
+      type: Number,
+      required: true,
+      min: 1,
+      max: 10,
+      default: 5,
+    },
+  },
+  {
+    _id: false,
+  }
+);
+
 const teamMemberSchema = new mongoose.Schema(
   {
     name: {
@@ -17,7 +39,7 @@ const teamMemberSchema = new mongoose.Schema(
     },
 
     skills: {
-      type: [String],
+      type: [memberSkillSchema],
       default: [],
     },
   },
@@ -90,6 +112,34 @@ const teamProfileSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+teamProfileSchema.pre("validate", function normalizeLegacySkills(next) {
+  for (const member of this.members) {
+    if (!Array.isArray(member.skills)) {
+      continue;
+    }
+
+    member.skills = member.skills
+      .map((skill) => {
+        if (typeof skill === "string") {
+          return {
+            name: skill,
+            proficiency: 5,
+          };
+        }
+
+        return skill;
+      })
+      .filter(
+        (skill) =>
+          skill &&
+          typeof skill.name === "string" &&
+          skill.name.trim()
+      );
+  }
+
+  next();
+});
 
 const TeamProfile = mongoose.model(
   "TeamProfile",
