@@ -33,6 +33,34 @@ const createDefaultMember = () => ({
   skills: [],
 });
 
+const normalizeSkill = (skill) => {
+  if (typeof skill === "string") {
+    return {
+      name: skill.trim(),
+      proficiency: 5,
+    };
+  }
+
+  if (!skill || typeof skill !== "object") {
+    return null;
+  }
+
+  const name = typeof skill.name === "string" ? skill.name.trim() : "";
+
+  if (!name) {
+    return null;
+  }
+
+  const numericProficiency = Number(skill.proficiency);
+
+  return {
+    name,
+    proficiency: Number.isFinite(numericProficiency)
+      ? Math.max(1, Math.min(10, Math.round(numericProficiency)))
+      : 5,
+  };
+};
+
 const normalizeProfile = (profile) => {
   return {
     ...DEFAULT_TEAM_PROFILE,
@@ -43,7 +71,9 @@ const normalizeProfile = (profile) => {
             id: member.id || createMemberId(),
             name: member.name || "",
             role: member.role || "",
-            skills: Array.isArray(member.skills) ? member.skills : [],
+            skills: Array.isArray(member.skills)
+              ? member.skills.map(normalizeSkill).filter(Boolean)
+              : [],
           }))
         : [createDefaultMember()],
     preferences: {
@@ -192,7 +222,7 @@ export default function TeamProfileForm({ onSaved, onCancel }) {
     const existingSkills = member.skills || [];
 
     const alreadyExists = existingSkills.some(
-      (skill) => skill.toLowerCase() === draft.toLowerCase(),
+      (skill) => skill.name.toLowerCase() === draft.toLowerCase(),
     );
 
     if (alreadyExists) {
@@ -201,7 +231,13 @@ export default function TeamProfileForm({ onSaved, onCancel }) {
     }
 
     updateMember(memberId, {
-      skills: [...existingSkills, draft],
+      skills: [
+        ...existingSkills,
+        {
+          name: draft,
+          proficiency: 5,
+        },
+      ],
     });
 
     setSkillDraft(memberId, "");
@@ -215,7 +251,23 @@ export default function TeamProfileForm({ onSaved, onCancel }) {
     }
 
     updateMember(memberId, {
-      skills: member.skills.filter((skill) => skill !== skillToRemove),
+      skills: member.skills.filter((skill) => skill.name !== skillToRemove),
+    });
+  };
+
+  const updateSkillProficiency = (memberId, skillName, proficiency) => {
+    updateMember(memberId, {
+      skills:
+        profile.members
+          .find((member) => member.id === memberId)
+          ?.skills.map((skill) =>
+            skill.name === skillName
+              ? {
+                  ...skill,
+                  proficiency: Math.max(1, Math.min(10, Number(proficiency))),
+                }
+              : skill,
+          ) || [],
     });
   };
 
@@ -513,50 +565,89 @@ export default function TeamProfileForm({ onSaved, onCancel }) {
                     Skills
                   </label>
 
-                  <div className="w-full min-h-[46px] bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 flex flex-wrap items-center gap-2 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent">
+                  <div className="space-y-3">
                     {member.skills.map((skill) => (
-                      <span
-                        key={skill}
-                        className="inline-flex items-center gap-1.5 rounded-md border border-blue-500/20 bg-blue-500/10 px-2.5 py-1 text-xs font-medium text-blue-300"
+                      <div
+                        key={skill.name}
+                        className="rounded-lg border border-slate-800 bg-slate-900/70 p-3"
                       >
-                        {skill}
+                        <div className="flex items-center justify-between gap-3 mb-3">
+                          <span className="inline-flex items-center rounded-md border border-blue-500/20 bg-blue-500/10 px-2.5 py-1 text-xs font-medium text-blue-300">
+                            {skill.name}
+                          </span>
 
-                        <button
-                          type="button"
-                          onClick={() => removeSkill(member.id, skill)}
-                          className="text-blue-400/70 hover:text-blue-200 transition-colors"
-                          aria-label={`Remove ${skill}`}
-                        >
-                          ×
-                        </button>
-                      </span>
+                          <button
+                            type="button"
+                            onClick={() => removeSkill(member.id, skill.name)}
+                            className="text-xs text-slate-500 hover:text-red-400 transition-colors"
+                            aria-label={`Remove ${skill.name}`}
+                          >
+                            Remove
+                          </button>
+                        </div>
+
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <label
+                              htmlFor={`proficiency-${member.id}-${skill.name}`}
+                              className="text-xs text-slate-500"
+                            >
+                              Proficiency
+                            </label>
+
+                            <span className="text-xs font-semibold text-blue-400">
+                              {skill.proficiency}/10
+                            </span>
+                          </div>
+
+                          <input
+                            id={`proficiency-${member.id}-${skill.name}`}
+                            type="range"
+                            min="1"
+                            max="10"
+                            step="1"
+                            value={skill.proficiency}
+                            onChange={(event) =>
+                              updateSkillProficiency(
+                                member.id,
+                                skill.name,
+                                event.target.value,
+                              )
+                            }
+                            className="w-full accent-blue-500"
+                          />
+
+                          <div className="flex justify-between mt-1 text-[10px] text-slate-600">
+                            <span>Beginner</span>
+                            <span>Expert</span>
+                          </div>
+                        </div>
+                      </div>
                     ))}
 
-                    <input
-                      id={`member-skills-${member.id}`}
-                      type="text"
-                      value={skillDrafts[member.id] || ""}
-                      onChange={(event) =>
-                        setSkillDraft(
-                          member.id,
-                          event.target.value.replace(/,/g, ""),
-                        )
-                      }
-                      onKeyDown={(event) =>
-                        handleSkillKeyDown(event, member.id)
-                      }
-                      placeholder={
-                        member.skills.length === 0
-                          ? "Type a skill and press Enter or comma"
-                          : "Add another skill..."
-                      }
-                      className="flex-1 min-w-[180px] bg-transparent border-0 outline-none text-sm text-white placeholder:text-slate-600 py-1"
-                    />
+                    <div className="w-full min-h-[46px] bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 flex flex-wrap items-center gap-2 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent">
+                      <input
+                        id={`member-skills-${member.id}`}
+                        type="text"
+                        value={skillDrafts[member.id] || ""}
+                        onChange={(event) =>
+                          setSkillDraft(
+                            member.id,
+                            event.target.value.replace(/,/g, ""),
+                          )
+                        }
+                        onKeyDown={(event) =>
+                          handleSkillKeyDown(event, member.id)
+                        }
+                        placeholder="Type a skill and press Enter or comma"
+                        className="flex-1 min-w-[180px] bg-transparent border-0 outline-none text-sm text-white placeholder:text-slate-600 py-1"
+                      />
+                    </div>
                   </div>
 
                   <p className="text-xs text-slate-600 mt-2">
-                    Press Enter or comma to add a skill. Backspace on an empty
-                    field removes the last skill.
+                    Add skills with Enter or comma, then set each skill's
+                    proficiency from 1 to 10.
                   </p>
                 </div>
               </div>

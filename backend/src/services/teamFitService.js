@@ -1,48 +1,82 @@
-import { normalizeSkills, normalizeSkill } from "../utils/skillNormalizer.js";
+import {
+  normalizeSkills,
+  normalizeSkill,
+} from "../utils/skillNormalizer.js";
 
-const calculateWeightedScore = (requiredSkills, teamSkills) => {
-  if (!requiredSkills.length) {
-    return {
-      score: 0,
-      totalWeight: 0,
-      matchedWeight: 0,
-    };
+const clampProficiency = (value) => {
+  const numericValue = Number(value);
+
+  if (!Number.isFinite(numericValue)) {
+    return 5;
   }
 
-  let totalWeight = 0;
-  let matchedWeight = 0;
+  return Math.max(
+    1,
+    Math.min(10, Math.round(numericValue))
+  );
+};
 
-  for (const requirement of requiredSkills) {
-    const weight = Number(requirement.weight) || 0;
+const buildTeamSkillMap = (members) => {
+  const skillMap = new Map();
 
-    totalWeight += weight;
+  for (const member of members || []) {
+    for (const rawSkill of member.skills || []) {
+      const skillName =
+        typeof rawSkill === "string"
+          ? rawSkill
+          : rawSkill?.name;
 
-    const requiredSkill = normalizeSkill(
-      requirement.skill
-    ).toLowerCase();
+      const normalizedSkillName =
+        normalizeSkill(skillName);
 
-    const hasSkill = teamSkills.some(
-      (teamSkill) =>
-        teamSkill.toLowerCase() === requiredSkill
-    );
+      if (!normalizedSkillName) {
+        continue;
+      }
 
-    if (hasSkill) {
-      matchedWeight += weight;
+      const proficiency = clampProficiency(
+        typeof rawSkill === "string"
+          ? 5
+          : rawSkill?.proficiency
+      );
+
+      const key = normalizedSkillName.toLowerCase();
+
+      const existing = skillMap.get(key);
+
+      if (
+        !existing ||
+        proficiency > existing.proficiency
+      ) {
+        skillMap.set(key, {
+          name: normalizedSkillName,
+          proficiency,
+        });
+      }
     }
   }
 
-  const score =
-    totalWeight === 0
-      ? 0
-      : Math.round(
-          (matchedWeight / totalWeight) * 100
-        );
+  return skillMap;
+};
 
-  return {
-    score,
-    totalWeight,
-    matchedWeight,
-  };
+const calculateCoverage = (
+  requiredSkill,
+  teamSkill
+) => {
+  if (!teamSkill) {
+    return 0;
+  }
+
+  const proficiency = clampProficiency(
+    teamSkill.proficiency
+  );
+
+  const normalizedWeight =
+    Number(requiredSkill.weight) || 0;
+
+  return (
+    (proficiency / 10) *
+    normalizedWeight
+  );
 };
 
 export const calculateTeamFit = ({
@@ -61,88 +95,129 @@ export const calculateTeamFit = ({
     );
   }
 
-  const teamSkills = normalizeSkills(
-    (teamProfile.members || []).flatMap(
-      (member) => member.skills || []
-    )
+  const teamSkillMap = buildTeamSkillMap(
+    teamProfile.members || []
   );
 
   const normalizedRequirements = requiredSkills
     .map((requirement) => ({
       ...requirement,
-      skill: normalizeSkill(requirement.skill),
-      weight: Number(requirement.weight) || 0,
+
+      skill: normalizeSkill(
+        requirement.skill
+      ),
+
+      weight:
+        Number(requirement.weight) || 0,
     }))
     .filter(
       (requirement) =>
-        requirement.skill && requirement.weight > 0
+        requirement.skill &&
+        requirement.weight > 0
     );
 
-  const {
-    score,
-    totalWeight,
-    matchedWeight,
-  } = calculateWeightedScore(
-    normalizedRequirements,
-    teamSkills
-  );
+  let totalWeight = 0;
+  let coveredWeight = 0;
 
   const matchedSkills = [];
+  const partialMatches = [];
   const missingSkills = [];
   const criticalGaps = [];
 
   for (const requirement of normalizedRequirements) {
-    const hasSkill = teamSkills.some(
-      (teamSkill) =>
-        teamSkill.toLowerCase() ===
-        requirement.skill.toLowerCase()
+    totalWeight += requirement.weight;
+
+    const key =
+      requirement.skill.toLowerCase();
+
+    const teamSkill = teamSkillMap.get(key);
+
+    const coverage = calculateCoverage(
+      requirement,
+      teamSkill
     );
 
-    if (hasSkill) {
-      matchedSkills.push({
-        skill: requirement.skill,
-        importance: requirement.importance,
-        weight: requirement.weight,
-        reason: requirement.reason,
-      });
+    coveredWeight += coverage;
+
+    if (!teamSkill) {
+      const missingSkill = {
+        ...requirement,
+        coverage: 0,
+      };
+
+      missingSkills.push(missingSkill);
+
+      if (
+        requirement.importance ===
+          "Must Have" ||
+        requirement.weight >= 8
+      ) {
+        criticalGaps.push(missingSkill);
+      }
 
       continue;
     }
 
-    const missingSkill = {
-      skill: requirement.skill,
-      importance: requirement.importance,
-      weight: requirement.weight,
-      reason: requirement.reason,
+    const proficiency = clampProficiency(
+      teamSkill.proficiency
+    );
+
+    const match = {
+      ...requirement,
+      proficiency,
+      coverage: Math.round(coverage * 100) / 100,
     };
 
-    missingSkills.push(missingSkill);
+    if (proficiency >= 8) {
+      matchedSkills.push(match);
+    } else {
+      partialMatches.push(match);
 
-    if (
-      requirement.importance === "Must Have" ||
-      requirement.weight >= 8
-    ) {
-      criticalGaps.push(missingSkill);
+      if (
+        requirement.importance ===
+          "Must Have" &&
+        proficiency < 5
+      ) {
+        criticalGaps.push(match);
+      }
     }
   }
+
+  const score =
+    totalWeight === 0
+      ? 0
+      : Math.round(
+          (coveredWeight / totalWeight) *
+            100
+        );
 
   return {
     score,
 
-    matchedWeight,
     totalWeight,
 
-    teamSkills,
+    coveredWeight:
+      Math.round(coveredWeight * 100) / 100,
+
+    teamSkills: Array.from(
+      teamSkillMap.values()
+    ),
 
     matchedSkills,
+
+    partialMatches,
+
     missingSkills,
+
     criticalGaps,
 
     summary:
       criticalGaps.length === 0
         ? "The team covers the critical technical requirements of this problem."
         : `The team has ${criticalGaps.length} critical skill gap${
-            criticalGaps.length === 1 ? "" : "s"
+            criticalGaps.length === 1
+              ? ""
+              : "s"
           } that should be addressed before committing to the problem.`,
   };
 };
