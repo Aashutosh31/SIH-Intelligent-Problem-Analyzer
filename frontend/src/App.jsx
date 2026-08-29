@@ -31,13 +31,7 @@ import { analyzeProblem } from "./services/analysisService";
 import { fetchTeamProfile } from "./services/teamProfileService";
 import { getTeamId } from "./utils/teamIdentity";
 
-const TabButton = ({
-  id,
-  icon: Icon,
-  label,
-  activeTab,
-  setActiveTab,
-}) => (
+const TabButton = ({ id, icon: Icon, label, activeTab, setActiveTab }) => (
   <button
     type="button"
     onClick={() => setActiveTab(id)}
@@ -54,7 +48,7 @@ const TabButton = ({
 
 export default function App() {
   const [inputText, setInputText] = useState(
-    "Develop an intelligent platform for monitoring and detecting deepfakes in real-time across social media networks..."
+    "Develop an intelligent platform for monitoring and detecting deepfakes in real-time across social media networks...",
   );
 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -65,16 +59,12 @@ export default function App() {
 
   const [activeView, setActiveView] = useState("analyzer");
 
-  const [teamName, setTeamName] = useState(
-    MOCK_TEAM_PROFILE.name
-  );
+  const [teamName, setTeamName] = useState(MOCK_TEAM_PROFILE.name);
 
   useEffect(() => {
     const loadTeamName = async () => {
       try {
-        const profile = await fetchTeamProfile(
-          getTeamId()
-        );
+        const profile = await fetchTeamProfile(getTeamId());
 
         if (profile?.name) {
           setTeamName(profile.name);
@@ -86,10 +76,7 @@ export default function App() {
           error instanceof Error &&
           error.message !== "Team profile not found."
         ) {
-          console.error(
-            "Failed to load team profile:",
-            error
-          );
+          console.error("Failed to load team profile:", error);
         }
       }
     };
@@ -111,9 +98,10 @@ export default function App() {
     setActiveView("analyzer");
 
     try {
-      const result = await analyzeProblem(
-        problemStatement
-      );
+      const result = await analyzeProblem({
+        problemStatement,
+        teamId: getTeamId(),
+      });
 
       setAnalysis(result);
     } catch (error) {
@@ -122,7 +110,7 @@ export default function App() {
       setError(
         error instanceof Error
           ? error.message
-          : "Something went wrong while analyzing the problem."
+          : "Something went wrong while analyzing the problem.",
       );
     } finally {
       setIsAnalyzing(false);
@@ -141,9 +129,7 @@ export default function App() {
     <div className="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-blue-500/30">
       <Header
         teamName={teamName}
-        onTeamProfileClick={() =>
-          setActiveView("team-profile")
-        }
+        onTeamProfileClick={() => setActiveView("team-profile")}
       />
 
       {activeView === "team-profile" ? (
@@ -170,49 +156,36 @@ export default function App() {
           <div className="lg:col-span-4 space-y-6">
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
               <h2 className="text-lg font-semibold mb-2 flex items-center">
-                <Target
-                  size={18}
-                  className="mr-2 text-blue-400"
-                />
+                <Target size={18} className="mr-2 text-blue-400" />
                 Analyze Problem
               </h2>
 
               <p className="text-sm text-slate-400 mb-4">
-                Paste your Smart India Hackathon problem statement
-                here. We'll extract the engineering reality.
+                Paste your Smart India Hackathon problem statement here. We'll
+                extract the engineering reality.
               </p>
 
               <textarea
                 className="w-full h-48 bg-slate-950 border border-slate-700 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none mb-4 font-mono placeholder:text-slate-600"
                 placeholder="Paste problem description, requirements, or upload PDF (coming soon)..."
                 value={inputText}
-                onChange={(event) =>
-                  setInputText(event.target.value)
-                }
+                onChange={(event) => setInputText(event.target.value)}
               />
 
               <button
                 type="button"
                 onClick={handleAnalyze}
-                disabled={
-                  isAnalyzing || !inputText.trim()
-                }
+                disabled={isAnalyzing || !inputText.trim()}
                 className="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-2.5 rounded-lg transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isAnalyzing ? (
                   <>
-                    <Loader2
-                      size={18}
-                      className="animate-spin mr-2"
-                    />
+                    <Loader2 size={18} className="animate-spin mr-2" />
                     Analyzing Specs...
                   </>
                 ) : (
                   <>
-                    <BrainCircuit
-                      size={18}
-                      className="mr-2"
-                    />
+                    <BrainCircuit size={18} className="mr-2" />
                     Generate Execution Plan
                   </>
                 )}
@@ -240,32 +213,23 @@ export default function App() {
               </div>
             )}
 
-            {!analysis &&
-              !isAnalyzing &&
-              !error && (
-                <div className="bg-slate-900/50 border border-slate-800 border-dashed rounded-xl p-6 text-center text-slate-500">
-                  <Layers
-                    size={32}
-                    className="mx-auto mb-3 opacity-50"
-                  />
+            {!analysis && !isAnalyzing && !error && (
+              <div className="bg-slate-900/50 border border-slate-800 border-dashed rounded-xl p-6 text-center text-slate-500">
+                <Layers size={32} className="mx-auto mb-3 opacity-50" />
 
-                  <p className="text-sm">
-                    Enter a problem statement to generate
-                    architecture, risk analysis, and team fit
-                    scores.
-                  </p>
-                </div>
-              )}
+                <p className="text-sm">
+                  Enter a problem statement to generate architecture, risk
+                  analysis, and team fit scores.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Right Column */}
           <div className="lg:col-span-8">
             {isAnalyzing && (
               <div className="h-full flex flex-col items-center justify-center text-slate-400 space-y-4 py-20">
-                <Loader2
-                  size={48}
-                  className="animate-spin text-blue-500"
-                />
+                <Loader2 size={48} className="animate-spin text-blue-500" />
 
                 <p className="animate-pulse font-medium">
                   Deconstructing problem requirements...
@@ -341,38 +305,29 @@ export default function App() {
 
                 <div className="bg-slate-900 border border-slate-800 rounded-b-xl rounded-tr-xl p-6 min-h-[400px]">
                   {activeTab === "scorecard" && (
-                  <ScorecardTab
-                    scorecard={analysis.scorecard}
-                    teamFit={analysis.teamFit}
-                  />
+                    <ScorecardTab
+                      scorecard={analysis.scorecard}
+                      teamFit={analysis.teamFit}
+                    />
                   )}
 
                   {activeTab === "engineering" && (
                     <EngineeringTab
-                      engineering={
-                        analysis.engineeringInterpretation
-                      }
+                      engineering={analysis.engineeringInterpretation}
                     />
                   )}
 
                   {activeTab === "skills" && (
                     <SkillsTab
-                      teamAndSkills={
-                        analysis.teamAndSkills
-                      }
+                      teamAndSkills={analysis.teamAndSkills}
                       techStack={analysis.techStack}
                     />
                   )}
 
                   {activeTab === "ai" && (
                     <AiVibeTab
-                      aiAndVibeCoding={
-                        analysis.aiAndVibeCoding
-                      }
-                      aiVibePotential={
-                        analysis.scorecard
-                          .aiVibePotential
-                      }
+                      aiAndVibeCoding={analysis.aiAndVibeCoding}
+                      aiVibePotential={analysis.scorecard.aiVibePotential}
                     />
                   )}
 
