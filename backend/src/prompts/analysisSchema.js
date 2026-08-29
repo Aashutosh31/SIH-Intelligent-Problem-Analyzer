@@ -24,7 +24,7 @@ export const analysisZodSchema = z.object({
         name: z.string(),
         description: z.string(),
         complexity: z.enum(["High", "Medium", "Low"]),
-      })
+      }),
     ),
 
     architecturePattern: z.string(),
@@ -38,8 +38,14 @@ export const analysisZodSchema = z.object({
   }),
 
   teamAndSkills: z.object({
-    mustHave: z.array(z.string()),
-    goodToHave: z.array(z.string()),
+    requiredSkills: z.array(
+      z.object({
+        skill: z.string(),
+        importance: z.enum(["Must Have", "Good to Have", "Advanced"]),
+        weight: z.number().int().min(1).max(10),
+        reason: z.string(),
+      }),
+    ),
     recommendedComposition: z.string(),
   }),
 
@@ -53,25 +59,15 @@ export const analysisZodSchema = z.object({
     redFlags: z.array(
       z.object({
         risk: z.string(),
-        severity: z.enum([
-          "Critical",
-          "High",
-          "Medium",
-          "Low",
-        ]),
-      })
+        severity: z.enum(["Critical", "High", "Medium", "Low"]),
+      }),
     ),
 
     datasetRisk: z.string(),
   }),
 
   verdict: z.object({
-    decision: z.enum([
-      "GO FOR IT",
-      "GO FOR IT - BUT...",
-      "CONSIDER",
-      "AVOID",
-    ]),
+    decision: z.enum(["GO FOR IT", "GO FOR IT - BUT...", "CONSIDER", "AVOID"]),
 
     reasoning: z.string(),
   }),

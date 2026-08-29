@@ -67,7 +67,14 @@ Use EXACTLY this top-level structure:
     "reasons": []
   },
 
-  "required_skills": [],
+  "required_skills": [
+    {
+      "skill": "string",
+      "importance": "Must Have | Good to Have | Advanced",
+      "weight": 1,
+      "reason": "string"
+    }
+  ],
 
   "ai_vibe_coding": {
     "high_leverage_areas": [],
@@ -157,6 +164,24 @@ TECH STACK:
 Recommend technologies based on actual requirements.
 
 Do not choose technologies simply because they are fashionable.
+
+REQUIRED SKILLS:
+
+For every required skill:
+- identify the canonical skill name
+- classify its importance
+- assign a weight from 1 to 10
+- explain why the skill matters
+
+Weight guidelines:
+10 = absolutely critical to the core solution
+8–9 = highly important
+6–7 = important
+4–5 = useful
+1–3 = optional or niche
+
+Do not list technologies merely because they could be used.
+Only identify skills that the actual problem meaningfully requires.
 
 AI/VIBE CODING:
 

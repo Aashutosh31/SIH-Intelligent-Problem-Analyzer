@@ -15,9 +15,7 @@ const normalizeArray = (value) => {
 
   return value
     .filter((item) => item !== null && item !== undefined)
-    .map((item) =>
-      typeof item === "string" ? item : JSON.stringify(item)
-    );
+    .map((item) => (typeof item === "string" ? item : JSON.stringify(item)));
 };
 
 export const normalizeGeminiAnalysis = (raw) => {
@@ -26,11 +24,7 @@ export const normalizeGeminiAnalysis = (raw) => {
   }
 
   // Already canonical.
-  if (
-    raw.identity &&
-    raw.scorecard &&
-    raw.engineeringInterpretation
-  ) {
+  if (raw.identity && raw.scorecard && raw.engineeringInterpretation) {
     return raw;
   }
 
@@ -44,16 +38,12 @@ export const normalizeGeminiAnalysis = (raw) => {
   const verdict = raw.verdict_and_strategy || {};
 
   if (!raw.problem_summary) {
-    throw new Error(
-      "Gemini returned an unsupported analysis format."
-    );
+    throw new Error("Gemini returned an unsupported analysis format.");
   }
 
   return {
     identity: {
-      title:
-        engineering.core_objective ||
-        "SIH Problem Analysis",
+      title: engineering.core_objective || "SIH Problem Analysis",
 
       domain: "Smart India Hackathon",
 
@@ -61,65 +51,45 @@ export const normalizeGeminiAnalysis = (raw) => {
     },
 
     scorecard: {
-      difficulty: clampScore(
-        scores.overall_difficulty
-      ),
+      difficulty: clampScore(scores.overall_difficulty),
 
-      competition: clampScore(
-        scores.competition_level
-      ),
+      competition: clampScore(scores.competition_level),
 
-      innovation: clampScore(
-        scores.innovation_potential
-      ),
+      innovation: clampScore(scores.innovation_potential),
 
-      teamFit: clampScore(
-        scores.preliminary_team_fit
-      ),
+      teamFit: clampScore(scores.preliminary_team_fit),
 
-      aiVibePotential: clampScore(
-        scores.ai_vibe_coding_potential
-      ),
+      aiVibePotential: clampScore(scores.ai_vibe_coding_potential),
 
-      implementationRisk: clampScore(
-        scores.implementation_risk
-      ),
+      implementationRisk: clampScore(scores.implementation_risk),
     },
 
     engineeringInterpretation: {
       whatItActuallyMeans: [
-        ...(engineering.core_objective
-          ? [engineering.core_objective]
-          : []),
+        ...(engineering.core_objective ? [engineering.core_objective] : []),
 
-        ...normalizeArray(
-          engineering.key_processing_steps
-        ),
+        ...normalizeArray(engineering.key_processing_steps),
       ],
 
       components: [
-        ...normalizeArray(
-          engineering.core_components
-        ).map((component) => ({
+        ...normalizeArray(engineering.core_components).map((component) => ({
           name: component,
-          description:
-            "Core component identified from the problem analysis.",
+          description: "Core component identified from the problem analysis.",
           complexity: "Medium",
         })),
 
-        ...normalizeArray(
-          engineering.external_dependencies
-        ).map((dependency) => ({
-          name: dependency,
-          description:
-            "External dependency identified from the problem analysis.",
-          complexity: "High",
-        })),
+        ...normalizeArray(engineering.external_dependencies).map(
+          (dependency) => ({
+            name: dependency,
+            description:
+              "External dependency identified from the problem analysis.",
+            complexity: "High",
+          }),
+        ),
       ],
 
       architecturePattern:
-        architecture.pattern ||
-        "Modular Application Architecture",
+        architecture.pattern || "Modular Application Architecture",
     },
 
     techStack: {
@@ -130,122 +100,89 @@ export const normalizeGeminiAnalysis = (raw) => {
     },
 
     teamAndSkills: {
-      mustHave: normalizeArray(
-        raw.required_skills
-      ),
-
-      goodToHave: [
-        ...normalizeArray(
-          engineering.ai_ml_requirements
-        ),
-
-        ...normalizeArray(
-          engineering.hardware_requirements
-        ),
-      ],
-
+      requiredSkills: Array.isArray(raw.required_skills)
+        ? raw.required_skills.map((skill) => ({
+            skill: typeof skill?.skill === "string" ? skill.skill : "",
+            importance:
+              skill?.importance === "Must Have" ||
+              skill?.importance === "Good to Have" ||
+              skill?.importance === "Advanced"
+                ? skill.importance
+                : "Good to Have",
+            weight: Number.isInteger(Number(skill?.weight))
+              ? Math.max(1, Math.min(10, Number(skill.weight)))
+              : 5,
+            reason:
+              typeof skill?.reason === "string"
+                ? skill.reason
+                : "Skill required by the problem requirements.",
+          }))
+        : [],
       recommendedComposition:
         "Determine the final team composition after the user's team profile is provided.",
     },
 
     aiAndVibeCoding: {
-      opportunities: normalizeArray(
-        ai.high_leverage_areas
-      ),
+      opportunities: normalizeArray(ai.high_leverage_areas),
 
-      dangerZones: normalizeArray(
-        ai.human_validation_required
-      ),
+      dangerZones: normalizeArray(ai.human_validation_required),
 
       toolStack: [],
     },
 
     risks: {
       redFlags: [
-        ...normalizeArray(
-          risks.technical_risks
-        ).map((risk) => ({
+        ...normalizeArray(risks.technical_risks).map((risk) => ({
           risk,
           severity: "High",
         })),
 
-        ...normalizeArray(
-          risks.operational_risks
-        ).map((risk) => ({
+        ...normalizeArray(risks.operational_risks).map((risk) => ({
           risk,
           severity: "Medium",
         })),
       ],
 
       datasetRisk:
-        normalizeArray(
-          engineering.ai_ml_requirements
-        ).length > 0
+        normalizeArray(engineering.ai_ml_requirements).length > 0
           ? "Dataset availability and quality must be evaluated for the identified AI/ML requirements."
           : "No significant dataset dependency identified at this analysis stage.",
     },
 
     verdict: {
-      decision:
-        verdict.verdict ||
-        "CONSIDER",
+      decision: verdict.verdict || "CONSIDER",
 
-      reasoning:
-        verdict.rationale ||
-        "Further evaluation is recommended.",
+      reasoning: verdict.rationale || "Further evaluation is recommended.",
     },
 
     intelligence: {
-      users: normalizeArray(
-        engineering.users
-      ),
+      users: normalizeArray(engineering.users),
 
-      inputs: normalizeArray(
-        engineering.inputs
-      ),
+      inputs: normalizeArray(engineering.inputs),
 
-      outputs: normalizeArray(
-        engineering.outputs
-      ),
+      outputs: normalizeArray(engineering.outputs),
 
-      keyProcessingSteps: normalizeArray(
-        engineering.key_processing_steps
-      ),
+      keyProcessingSteps: normalizeArray(engineering.key_processing_steps),
 
-      coreComponents: normalizeArray(
-        engineering.core_components
-      ),
+      coreComponents: normalizeArray(engineering.core_components),
 
-      externalDependencies: normalizeArray(
-        engineering.external_dependencies
-      ),
+      externalDependencies: normalizeArray(engineering.external_dependencies),
 
-      aiMlRequirements: normalizeArray(
-        engineering.ai_ml_requirements
-      ),
+      aiMlRequirements: normalizeArray(engineering.ai_ml_requirements),
 
-      hardwareRequirements: normalizeArray(
-        engineering.hardware_requirements
-      ),
+      hardwareRequirements: normalizeArray(engineering.hardware_requirements),
 
       infrastructureRequirements: normalizeArray(
-        engineering.infrastructure_requirements
+        engineering.infrastructure_requirements,
       ),
 
-      architectureBreakdown:
-        architecture.breakdown || null,
+      architectureBreakdown: architecture.breakdown || null,
 
-      devopsCloud: normalizeArray(
-        tech.devops_cloud
-      ),
+      devopsCloud: normalizeArray(tech.devops_cloud),
 
-      stackReasons: normalizeArray(
-        tech.reasons
-      ),
+      stackReasons: normalizeArray(tech.reasons),
 
-      differentiationStrategy:
-        verdict.winning_differentiation_strategy ||
-        null,
+      differentiationStrategy: verdict.winning_differentiation_strategy || null,
     },
   };
 };
