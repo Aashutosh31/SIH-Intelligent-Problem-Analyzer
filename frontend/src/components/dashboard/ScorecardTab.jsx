@@ -11,6 +11,7 @@ const ScorecardTab = ({ scorecard, teamFit }) => {
   const partialMatches = teamFit?.partialMatches || [];
   const missingSkills = teamFit?.missingSkills || [];
   const criticalGaps = teamFit?.criticalGaps || [];
+  const teamResilience = teamFit?.teamResilience ?? 0;
 
   return (
     <div className="space-y-6">
@@ -84,6 +85,49 @@ const ScorecardTab = ({ scorecard, teamFit }) => {
               <div className="text-xs text-slate-500 mt-1">
                 {teamFit.coveredWeight}/{teamFit.totalWeight} weighted coverage
               </div>
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-slate-800 bg-slate-950/60 p-4 mb-5">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h4 className="text-sm font-semibold text-white">
+                  Team Resilience
+                </h4>
+
+                <p className="text-xs text-slate-500 mt-1">
+                  How well critical capabilities are backed by multiple team
+                  members.
+                </p>
+              </div>
+
+              <div className="text-right shrink-0">
+                <div className="text-lg font-bold text-white">
+                  {teamResilience}
+                  <span className="text-xs font-medium text-slate-500">
+                    /100
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-3 h-1.5 rounded-full bg-slate-800 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-blue-500"
+                style={{
+                  width: `${teamResilience}%`,
+                }}
+              />
+            </div>
+
+            <div className="flex justify-between mt-1">
+              <span className="text-[10px] text-slate-600">
+                Single-owner coverage
+              </span>
+
+              <span className="text-[10px] text-slate-500">
+                Multi-member coverage
+              </span>
             </div>
           </div>
 
@@ -250,6 +294,42 @@ const ScorecardTab = ({ scorecard, teamFit }) => {
                           </span>
                         </div>
                       </div>
+
+                      <div className="mt-3 pt-3 border-t border-slate-800">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] uppercase tracking-wide text-slate-600">
+                            Primary owner
+                          </span>
+
+                          <span className="text-xs text-slate-300">
+                            {skill.primaryOwner?.memberName || "Unknown"}
+                          </span>
+                        </div>
+
+                        {skill.supportingMembers?.length > 0 ? (
+                          <div className="mt-1.5 flex items-start justify-between gap-3">
+                            <span className="text-[10px] uppercase tracking-wide text-slate-600">
+                              Support
+                            </span>
+
+                            <span className="text-xs text-slate-400 text-right">
+                              {skill.supportingMembers
+                                .map((member) => member.memberName)
+                                .join(", ")}
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="mt-1.5 flex items-center justify-between">
+                            <span className="text-[10px] uppercase tracking-wide text-slate-600">
+                              Resilience
+                            </span>
+
+                            <span className="text-[10px] text-amber-400">
+                              Single point of failure
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -330,6 +410,42 @@ const ScorecardTab = ({ scorecard, teamFit }) => {
                           Coverage: {skill.coverage}/{skill.weight}
                         </span>
                       </div>
+                    </div>
+
+                    <div className="mt-3 pt-3 border-t border-slate-800">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] uppercase tracking-wide text-slate-600">
+                          Primary owner
+                        </span>
+
+                        <span className="text-xs text-slate-300">
+                          {skill.primaryOwner?.memberName || "Unknown"}
+                        </span>
+                      </div>
+
+                      {skill.supportingMembers?.length > 0 ? (
+                        <div className="mt-1.5 flex items-start justify-between gap-3">
+                          <span className="text-[10px] uppercase tracking-wide text-slate-600">
+                            Support
+                          </span>
+
+                          <span className="text-xs text-slate-400 text-right">
+                            {skill.supportingMembers
+                              .map((member) => member.memberName)
+                              .join(", ")}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="mt-1.5 flex items-center justify-between">
+                          <span className="text-[10px] uppercase tracking-wide text-slate-600">
+                            Resilience
+                          </span>
+
+                          <span className="text-[10px] text-amber-400">
+                            Single point of failure
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     {skill.importance === "Must Have" && (
