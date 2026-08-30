@@ -62,7 +62,8 @@ const EngineeringTab = ({ engineering, taskAllocation }) => {
           ))}
         </div>
       </div>
-      <ExecutionOwnership taskAllocation={taskAllocation} />{" "}
+
+      <ExecutionOwnership taskAllocation={taskAllocation} />
     </div>
   );
 };
