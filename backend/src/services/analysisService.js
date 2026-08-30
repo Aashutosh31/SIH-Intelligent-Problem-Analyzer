@@ -3,11 +3,9 @@ import { ANALYSIS_SYSTEM_PROMPT } from "../prompts/analysisPrompt.js";
 import { normalizeGeminiAnalysis } from "./analysisNormalizer.js";
 import TeamProfile from "../models/TeamProfile.js";
 import { calculateTeamFit } from "./teamFitService.js";
+import { calculateTaskAllocation } from "./taskAllocationService.js";
 
-export const analyzeProblem = async ({
-  problemStatement,
-  teamId = null,
-}) => {
+export const analyzeProblem = async ({ problemStatement, teamId = null }) => {
   const prompt = `
 Analyze this Smart India Hackathon problem statement.
 
@@ -59,18 +57,12 @@ Do not invent external statistics or research.
   try {
     rawAnalysis = JSON.parse(response.text);
   } catch (error) {
-    console.error(
-      "Gemini returned invalid JSON:",
-      response.text
-    );
+    console.error("Gemini returned invalid JSON:", response.text);
 
-    throw new Error(
-      "Gemini returned invalid JSON."
-    );
+    throw new Error("Gemini returned invalid JSON.");
   }
 
-  const analysis =
-    normalizeGeminiAnalysis(rawAnalysis);
+  const analysis = normalizeGeminiAnalysis(rawAnalysis);
 
   /*
    * Team Fit is application-owned logic.
@@ -78,26 +70,29 @@ Do not invent external statistics or research.
    * Our backend determines how well the actual team matches them.
    */
   if (teamId) {
-    const teamProfile =
-      await TeamProfile.findOne({ teamId }).lean();
+    const teamProfile = await TeamProfile.findOne({ teamId }).lean();
 
     if (teamProfile) {
+      const requiredSkills = analysis.teamAndSkills.requiredSkills;
+
       const teamFit = calculateTeamFit({
-        requiredSkills:
-          analysis.teamAndSkills.requiredSkills,
+        requiredSkills,
         teamProfile,
       });
 
-      analysis.scorecard.teamFit =
-        teamFit.score;
+      const taskAllocation = calculateTaskAllocation({
+        requiredSkills,
+        teamProfile,
+      });
+
+      analysis.scorecard.teamFit = teamFit.score;
 
       analysis.teamFit = teamFit;
+      analysis.taskAllocation = taskAllocation;
     }
   }
 
-  console.log(
-    "✅ Gemini analysis generated successfully."
-  );
+  console.log("✅ Gemini analysis generated successfully.");
 
   return analysis;
 };
