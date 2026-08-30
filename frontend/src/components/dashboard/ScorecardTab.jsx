@@ -1,6 +1,7 @@
 import { CheckCircle2, AlertTriangle, Target } from "lucide-react";
 
 import ScoreGauge from "../ui/ScoreGauge";
+import TeamCoverageMatrix from "./TeamCoverageMatrix";
 
 const ScorecardTab = ({ scorecard, teamFit }) => {
   if (!scorecard) {
@@ -506,6 +507,8 @@ const ScorecardTab = ({ scorecard, teamFit }) => {
               </div>
             </div>
           )}
+
+          <TeamCoverageMatrix teamFit={teamFit} />
         </div>
       )}
     </div>
