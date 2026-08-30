@@ -314,6 +314,7 @@ export default function App() {
                   {activeTab === "engineering" && (
                     <EngineeringTab
                       engineering={analysis.engineeringInterpretation}
+                      taskAllocation={analysis.taskAllocation}
                     />
                   )}
 
