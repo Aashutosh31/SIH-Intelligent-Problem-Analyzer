@@ -46,117 +46,122 @@ const getMemberRole = (member) => {
 };
 
 /*
- * Small, explicit capability-family map.
+ * Weighted skill relationship map.
  *
- * This is intentionally deterministic rather than an open-ended
- * semantic matcher. We only award related-skill credit where the
- * relationship is known and explainable.
+ * This is intentionally deterministic rather than an open-ended semantic matcher.
+ * We only award related-skill credit where the relationship is known and explainable.
+ * Weights (0-1) indicate relevance: 1.0 = core relationship, 0.5 = tangential.
+ * Generic skills (e.g., Python) have lower weights to avoid over-influencing scores.
  */
-const SKILL_FAMILIES = {
-  "computer vision": [
-    "Machine Learning",
-    "Deep Learning",
-    "Python",
-    "OpenCV",
-    "Image Processing",
-    "Video Processing",
-  ],
+const SKILL_RELATIONSHIPS = {
+  "computer vision": {
+    "Deep Learning": 1.0,
+    "Machine Learning": 0.9,
+    "Image Processing": 0.9,
+    OpenCV: 0.9,
+    "Video Processing": 0.7,
+    Python: 0.6,
+  },
 
-  "deep learning": [
-    "Machine Learning",
-    "Python",
-    "PyTorch",
-    "TensorFlow",
-    "Computer Vision",
-  ],
+  "deep learning": {
+    "Machine Learning": 1.0,
+    PyTorch: 1.0,
+    TensorFlow: 1.0,
+    "Computer Vision": 0.8,
+    Python: 0.7,
+  },
 
-  "machine learning": [
-    "Python",
-    "Deep Learning",
-    "Statistics",
-    "Data Science",
-    "Computer Vision",
-  ],
+  "machine learning": {
+    "Deep Learning": 0.9,
+    Python: 0.8,
+    Statistics: 0.85,
+    "Data Science": 0.9,
+    "Computer Vision": 0.7,
+  },
 
-  "model optimization": [
-    "Machine Learning",
-    "Deep Learning",
-    "Python",
-    "MLOps",
-    "GPU Computing",
-  ],
+  "model optimization": {
+    "Deep Learning": 1.0,
+    "Machine Learning": 0.9,
+    MLOps: 0.8,
+    "GPU Computing": 0.8,
+    Python: 0.6,
+  },
 
-  "asynchronous backend development": [
-    "Backend Development",
-    "Node.js",
-    "Python",
-    "FastAPI",
-    "Redis",
-    "Docker",
-    "Distributed Systems",
-  ],
+  "asynchronous backend development": {
+    "Backend Development": 1.0,
+    "Distributed Systems": 0.9,
+    Redis: 0.85,
+    "Node.js": 0.8,
+    FastAPI: 0.8,
+    Docker: 0.6,
+    Python: 0.5,
+  },
 
-  "backend development": [
-    "Node.js",
-    "Express",
-    "Python",
-    "FastAPI",
-    "REST API",
-    "Database Management",
-  ],
+  "backend development": {
+    "Node.js": 1.0,
+    Express: 1.0,
+    FastAPI: 0.95,
+    Python: 0.8,
+    "REST API": 0.8,
+    "Database Management": 0.5,
+  },
 
-  "full stack development": [
-    "Frontend Development",
-    "Backend Development",
-    "React",
-    "Node.js",
-    "Database Management",
-  ],
+  "full stack development": {
+    "Frontend Development": 0.9,
+    "Backend Development": 0.9,
+    React: 0.9,
+    "Node.js": 0.9,
+    "Database Management": 0.6,
+  },
 
-  "video processing": [
-    "Python",
-    "Computer Vision",
-    "FFmpeg",
-    "OpenCV",
-    "Media Processing",
-  ],
+  "video processing": {
+    Python: 0.9,
+    "Computer Vision": 0.95,
+    FFmpeg: 1.0,
+    OpenCV: 1.0,
+    "Media Processing": 0.9,
+  },
 
-  "frontend development": [
-    "React",
-    "JavaScript",
-    "TypeScript",
-    "CSS",
-    "UI Development",
-  ],
+  "frontend development": {
+    React: 1.0,
+    JavaScript: 0.95,
+    TypeScript: 0.9,
+    "UI Development": 0.9,
+    CSS: 0.7,
+  },
 
-  "database management": [
-    "MongoDB",
-    "PostgreSQL",
-    "SQL",
-    "Mongoose",
-    "Database Design",
-  ],
+  "database management": {
+    MongoDB: 1.0,
+    PostgreSQL: 1.0,
+    SQL: 0.95,
+    Mongoose: 0.9,
+    "Database Design": 0.9,
+  },
 
-  "distributed systems": [
-    "Backend Development",
-    "Docker",
-    "Redis",
-    "Kubernetes",
-    "System Design",
-  ],
+  "distributed systems": {
+    "Backend Development": 1.0,
+    Docker: 0.95,
+    Redis: 0.9,
+    Kubernetes: 1.0,
+    "System Design": 0.9,
+  },
 
-  mlops: [
-    "Machine Learning",
-    "Docker",
-    "Python",
-    "Model Deployment",
-    "Cloud Computing",
-  ],
+  mlops: {
+    "Machine Learning": 0.95,
+    Docker: 0.9,
+    Python: 0.75,
+    "Model Deployment": 1.0,
+    "Cloud Computing": 0.8,
+  },
 };
 
 const getSkillFamily = (canonicalSkill) => {
-  return (SKILL_FAMILIES[canonicalSkill.toLowerCase()] || [])
-    .map((skill) => normalizeSkill(skill))
+  const relationships = SKILL_RELATIONSHIPS[canonicalSkill.toLowerCase()] || {};
+  return Object.entries(relationships)
+    .map(([skillName, relevance]) => {
+      const normalized = normalizeSkill(skillName);
+      return normalized ? { name: normalized, relevance } : null;
+    })
     .filter(Boolean);
 };
 
@@ -214,8 +219,8 @@ const calculateCandidateScore = ({ requirement, member }) => {
 
   const family = getSkillFamily(targetSkill);
 
-  for (const relatedSkill of family) {
-    const existing = skillMap.get(relatedSkill.toLowerCase());
+  for (const relatedSkillDef of family) {
+    const existing = skillMap.get(relatedSkillDef.name.toLowerCase());
 
     if (!existing) {
       continue;
@@ -224,6 +229,7 @@ const calculateCandidateScore = ({ requirement, member }) => {
     relatedSkills.push({
       name: existing.name,
       proficiency: existing.proficiency,
+      relevance: relatedSkillDef.relevance,
     });
   }
 
@@ -236,44 +242,63 @@ const calculateCandidateScore = ({ requirement, member }) => {
   }, null);
 
   /*
-   * Base score rewards related capability.
+   * Weighted score rewards related capability with relevance factored in.
    *
-   * 0–40: related skill coverage
-   * 0–30: proficiency of strongest related skill
-   * 0–20: role alignment
-   * 0–10: willingness to learn
+   * 0–40: weighted related skill contribution (proficiency × relevance)
+   * 0–30: role alignment
+   * 0–20: willingness to learn
+   * 0–10: general learning capacity reserve
    */
   let score = 0;
 
-  if (strongestRelatedSkill) {
-    score += 40;
+  if (relatedSkills.length > 0) {
+    /*
+     * Weighted contribution: proficiency × relevance.
+     * Normalize by highest possible (10 × 1.0 = 10) to keep at most 40 points.
+     */
+    const weightedSum = relatedSkills.reduce(
+      (sum, skill) => sum + (skill.proficiency / 10) * skill.relevance,
+      0,
+    );
 
-    score += (strongestRelatedSkill.proficiency / 10) * 30;
+    const maxWeightedContribution = relatedSkills.length; // worst case: each skill at weight 1.0
+
+    const normalizedWeightedScore = Math.min(
+      40,
+      (weightedSum / maxWeightedContribution) * 40,
+    );
+
+    score += normalizedWeightedScore;
   }
 
   const normalizedRole = getMemberRole(member).toLowerCase();
 
   const roleMatchesTarget = normalizedRole.includes(targetSkill.toLowerCase());
 
-  const roleMatchesFamily = family.some((skill) =>
-    normalizedRole.includes(skill.toLowerCase()),
+  const roleMatchesFamily = family.some((skillDef) =>
+    normalizedRole.includes(skillDef.name.toLowerCase()),
   );
 
   if (roleMatchesTarget) {
-    score += 20;
+    score += 30;
   } else if (roleMatchesFamily) {
-    score += 12;
+    score += 18;
   }
 
   const willingness = clampProficiency(
     member.preferences?.willingnessToLearn ?? 5,
   );
 
-  score += (willingness / 10) * 10;
+  score += (willingness / 10) * 20;
+
+  // Small bonus for general learning capacity even without direct connections
+  if (relatedSkills.length === 0) {
+    score += 10;
+  }
 
   return {
     eligible: score > 0,
-    score: Math.round(score),
+    score: Math.min(100, Math.round(score)),
     currentProficiency: strongestRelatedSkill?.proficiency || 0,
 
     basis: strongestRelatedSkill
