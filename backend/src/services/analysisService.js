@@ -4,6 +4,7 @@ import { normalizeGeminiAnalysis } from "./analysisNormalizer.js";
 import TeamProfile from "../models/TeamProfile.js";
 import { calculateTeamFit } from "./teamFitService.js";
 import { calculateTaskAllocation } from "./taskAllocationService.js";
+import {calculateSkillGapRecommendations} from "./skillGapService.js";
 
 export const analyzeProblem = async ({ problemStatement, teamId = null }) => {
   const prompt = `
@@ -79,16 +80,22 @@ Do not invent external statistics or research.
         requiredSkills,
         teamProfile,
       });
-
+      
       const taskAllocation = calculateTaskAllocation({
         requiredSkills,
         teamProfile,
       });
 
+      const skillGapRecommendations = calculateSkillGapRecommendations({
+        requiredSkills,
+        teamProfile,
+      });
+      
       analysis.scorecard.teamFit = teamFit.score;
-
+      
       analysis.teamFit = teamFit;
       analysis.taskAllocation = taskAllocation;
+      analysis.skillGapRecommendations = skillGapRecommendations;
     }
   }
 
