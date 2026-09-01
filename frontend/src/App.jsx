@@ -322,6 +322,7 @@ export default function App() {
                     <SkillsTab
                       teamAndSkills={analysis.teamAndSkills}
                       techStack={analysis.techStack}
+                      skillGapRecommendations={analysis.skillGapRecommendations}
                     />
                   )}
 

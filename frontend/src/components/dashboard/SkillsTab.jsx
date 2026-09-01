@@ -1,6 +1,8 @@
 import { Code, Server, BrainCircuit, Database } from "lucide-react";
 
-const SkillsTab = ({ teamAndSkills, techStack }) => {
+import SkillGapPanel from "./SkillGapPanel";
+
+const SkillsTab = ({ teamAndSkills, techStack, skillGapRecommendations }) => {
   if (!teamAndSkills || !techStack) return null;
 
   const requiredSkills = Array.isArray(teamAndSkills.requiredSkills)
@@ -126,6 +128,8 @@ const SkillsTab = ({ teamAndSkills, techStack }) => {
           </div>
         </div>
       </div>
+
+      <SkillGapPanel skillGapRecommendations={skillGapRecommendations} />
     </div>
   );
 };
