@@ -1,24 +1,32 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
-const STORAGE_KEY_PREFIX = "team_";
+const ACCESS_TOKEN_PREFIX = "team_access_token_";
 
-const getStorageKey = (teamId, suffix) =>
-  `${STORAGE_KEY_PREFIX}${teamId}_${suffix}`;
+const getAccessTokenKey = (teamId) =>
+  `${ACCESS_TOKEN_PREFIX}${teamId}`;
 
-const storeAccessToken = (teamId, token) => {
+export const storeAccessToken = (teamId, token) => {
   if (!teamId || !token) {
     return;
   }
 
-  localStorage.setItem(getStorageKey(teamId, "accessToken"), token);
+  localStorage.setItem(getAccessTokenKey(teamId), token);
 };
 
-const retrieveAccessToken = (teamId) => {
+export const retrieveAccessToken = (teamId) => {
   if (!teamId) {
     return null;
   }
 
-  return localStorage.getItem(getStorageKey(teamId, "accessToken"));
+  return localStorage.getItem(getAccessTokenKey(teamId));
+};
+
+const buildAuthHeaders = (teamId) => {
+  const accessToken = retrieveAccessToken(teamId);
+
+  return accessToken
+    ? { Authorization: `Bearer ${accessToken}` }
+    : {};
 };
 
 const request = async (url, options = {}) => {
@@ -39,9 +47,13 @@ const request = async (url, options = {}) => {
   }
 
   if (!response.ok) {
-    throw new Error(
+    const error = new Error(
       payload?.error || payload?.message || "Team profile request failed.",
     );
+
+    error.status = response.status;
+
+    throw error;
   }
 
   if (!payload?.success) {
@@ -56,6 +68,7 @@ const request = async (url, options = {}) => {
 export const saveTeamProfile = async (profile) => {
   const result = await request(`${API_BASE_URL}/api/team-profile`, {
     method: "POST",
+    headers: buildAuthHeaders(profile.teamId),
     body: JSON.stringify(profile),
   });
 
@@ -71,17 +84,10 @@ export const fetchTeamProfile = async (teamId) => {
     throw new Error("teamId is required.");
   }
 
-  const accessToken = retrieveAccessToken(teamId);
-
-  const queryParams = new URLSearchParams();
-
-  if (accessToken) {
-    queryParams.append("accessToken", accessToken);
-  }
-
-  const url = `${API_BASE_URL}/api/team-profile/${encodeURIComponent(
-    teamId,
-  )}?${queryParams}`;
-
-  return request(url);
+  return request(
+    `${API_BASE_URL}/api/team-profile/${encodeURIComponent(teamId)}`,
+    {
+      headers: buildAuthHeaders(teamId),
+    },
+  );
 };

@@ -18,18 +18,8 @@ import { getTeamId } from "../../utils/teamIdentity";
 
 import { DEFAULT_TEAM_PROFILE } from "../../types/team";
 
-const STORAGE_KEY_PREFIX = "team_";
-
-const getStorageKey = (teamId, suffix) =>
-  `${STORAGE_KEY_PREFIX}${teamId}_${suffix}`;
-
-const retrieveAccessToken = (teamId) => {
-  if (!teamId) {
-    return null;
-  }
-
-  return localStorage.getItem(getStorageKey(teamId, "accessToken"));
-};
+const SESSION_EXPIRED_MESSAGE =
+  "Your team session is no longer authorized. Please recreate or reconnect the team profile.";
 
 const createMemberId = () => {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
@@ -125,12 +115,27 @@ export default function TeamProfileForm({ onSaved, onCancel }) {
           }),
         );
       } catch (loadError) {
-        // A 404 simply means this team does not have
-        // a profile yet. Start with the default form.
         if (
           loadError instanceof Error &&
           loadError.message === "Team profile not found."
         ) {
+          setProfile(
+            normalizeProfile({
+              ...DEFAULT_TEAM_PROFILE,
+              teamId,
+            }),
+          );
+        } else if (
+          loadError instanceof Error &&
+          (loadError.status === 401 || loadError.status === 403)
+        ) {
+          console.error(
+            "Team session is not authorized:",
+            loadError,
+          );
+
+          setError(SESSION_EXPIRED_MESSAGE);
+
           setProfile(
             normalizeProfile({
               ...DEFAULT_TEAM_PROFILE,
@@ -342,7 +347,6 @@ export default function TeamProfileForm({ onSaved, onCancel }) {
     }
 
     const teamId = getTeamId();
-    const accessToken = retrieveAccessToken(teamId);
 
     setIsSaving(true);
 
@@ -357,10 +361,6 @@ export default function TeamProfileForm({ onSaved, onCancel }) {
           skills: member.skills,
         })),
       };
-
-      if (accessToken) {
-        payload.accessToken = accessToken;
-      }
 
       const savedProfile = await saveTeamProfile(payload);
 
@@ -380,9 +380,12 @@ export default function TeamProfileForm({ onSaved, onCancel }) {
       console.error("Failed to save team profile:", saveError);
 
       setError(
-        saveError instanceof Error
-          ? saveError.message
-          : "Failed to save team profile.",
+        saveError instanceof Error &&
+          (saveError.status === 401 || saveError.status === 403)
+          ? SESSION_EXPIRED_MESSAGE
+          : saveError instanceof Error
+            ? saveError.message
+            : "Failed to save team profile.",
       );
     } finally {
       setIsSaving(false);

@@ -1,12 +1,14 @@
 import { generateGeminiContent } from "./geminiProvider.js";
 import { ANALYSIS_SYSTEM_PROMPT } from "../prompts/analysisPrompt.js";
 import { normalizeGeminiAnalysis } from "./analysisNormalizer.js";
-import TeamProfile from "../models/TeamProfile.js";
 import { calculateTeamFit } from "./teamFitService.js";
 import { calculateTaskAllocation } from "./taskAllocationService.js";
 import {calculateSkillGapRecommendations} from "./skillGapService.js";
 
-export const analyzeProblem = async ({ problemStatement, teamId = null }) => {
+export const analyzeProblem = async ({
+  problemStatement,
+  teamProfile = null,
+}) => {
   const prompt = `
 Analyze this Smart India Hackathon problem statement.
 
@@ -70,33 +72,29 @@ Do not invent external statistics or research.
    * Gemini determines required skills.
    * Our backend determines how well the actual team matches them.
    */
-  if (teamId) {
-    const teamProfile = await TeamProfile.findOne({ teamId }).lean();
+  if (teamProfile) {
+    const requiredSkills = analysis.teamAndSkills.requiredSkills;
 
-    if (teamProfile) {
-      const requiredSkills = analysis.teamAndSkills.requiredSkills;
+    const teamFit = calculateTeamFit({
+      requiredSkills,
+      teamProfile,
+    });
+    
+    const taskAllocation = calculateTaskAllocation({
+      requiredSkills,
+      teamProfile,
+    });
 
-      const teamFit = calculateTeamFit({
-        requiredSkills,
-        teamProfile,
-      });
-      
-      const taskAllocation = calculateTaskAllocation({
-        requiredSkills,
-        teamProfile,
-      });
-
-      const skillGapRecommendations = calculateSkillGapRecommendations({
-        requiredSkills,
-        teamProfile,
-      });
-      
-      analysis.scorecard.teamFit = teamFit.score;
-      
-      analysis.teamFit = teamFit;
-      analysis.taskAllocation = taskAllocation;
-      analysis.skillGapRecommendations = skillGapRecommendations;
-    }
+    const skillGapRecommendations = calculateSkillGapRecommendations({
+      requiredSkills,
+      teamProfile,
+    });
+    
+    analysis.scorecard.teamFit = teamFit.score;
+    
+    analysis.teamFit = teamFit;
+    analysis.taskAllocation = taskAllocation;
+    analysis.skillGapRecommendations = skillGapRecommendations;
   }
 
   console.log("✅ Gemini analysis generated successfully.");

@@ -1,3 +1,5 @@
+import { retrieveAccessToken } from "./teamProfileService";
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 export const analyzeProblem = async ({ problemStatement, teamId }) => {
@@ -5,10 +7,19 @@ export const analyzeProblem = async ({ problemStatement, teamId }) => {
     throw new Error("Problem statement cannot be empty.");
   }
 
+  const hasTeamContext = Boolean(teamId);
+
+  const accessToken = hasTeamContext
+    ? retrieveAccessToken(teamId)
+    : null;
+
   const response = await fetch(`${API_BASE_URL}/api/analyze`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      ...(hasTeamContext && accessToken
+        ? { Authorization: `Bearer ${accessToken}` }
+        : {}),
     },
     body: JSON.stringify({
       problemStatement: problemStatement.trim(),
@@ -25,9 +36,13 @@ export const analyzeProblem = async ({ problemStatement, teamId }) => {
   }
 
   if (!response.ok) {
-    throw new Error(
+    const error = new Error(
       payload?.error || payload?.message || "Problem analysis failed.",
     );
+
+    error.status = response.status;
+
+    throw error;
   }
 
   if (!payload?.success || !payload?.data) {

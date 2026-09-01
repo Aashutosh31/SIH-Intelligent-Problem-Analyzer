@@ -61,6 +61,13 @@ export default function App() {
 
   const [teamName, setTeamName] = useState(MOCK_TEAM_PROFILE.name);
 
+  const isSessionError = (err) =>
+    err instanceof Error &&
+    (err.status === 401 || err.status === 403);
+
+  const SESSION_EXPIRED_MESSAGE =
+    "Your team session is no longer authorized. Please recreate or reconnect the team profile.";
+
   useEffect(() => {
     const loadTeamName = async () => {
       try {
@@ -70,8 +77,6 @@ export default function App() {
           setTeamName(profile.name);
         }
       } catch (error) {
-        // A missing profile is normal before the user
-        // creates one. Keep the fallback name.
         if (
           error instanceof Error &&
           error.message !== "Team profile not found."
@@ -108,9 +113,11 @@ export default function App() {
       console.error("Problem analysis failed:", error);
 
       setError(
-        error instanceof Error
-          ? error.message
-          : "Something went wrong while analyzing the problem.",
+        isSessionError(error)
+          ? SESSION_EXPIRED_MESSAGE
+          : error instanceof Error
+            ? error.message
+            : "Something went wrong while analyzing the problem.",
       );
     } finally {
       setIsAnalyzing(false);

@@ -82,9 +82,36 @@ const normalizeTeamProfile = (profile) => {
   };
 };
 
-export const createOrUpdateTeamProfile = async (teamProfileData) => {
-  const { teamId, name, members, preferences, accessToken } = teamProfileData;
+const requireValidToken = (accessToken, storedHash) => {
+  if (!tokensMatch(accessToken, storedHash)) {
+    const error = new Error("Invalid team access token.");
 
+    error.status = 401;
+
+    throw error;
+  }
+};
+
+const throwMigrationRequired = () => {
+  const error = new Error(
+    "This team profile requires migration. It was created before team access control existed and cannot be accessed or updated without a valid session."
+  );
+
+  error.status = 401;
+
+  throw error;
+};
+
+const findProfileByTeamId = (teamId) =>
+  TeamProfile.findOne({ teamId }).select("+accessTokenHash").lean();
+
+export const createOrUpdateTeamProfile = async ({
+  teamId,
+  name,
+  members,
+  preferences,
+  accessToken,
+}) => {
   if (!teamId?.trim()) {
     throw new Error("teamId is required.");
   }
@@ -92,6 +119,8 @@ export const createOrUpdateTeamProfile = async (teamProfileData) => {
   if (!name?.trim()) {
     throw new Error("Team name is required.");
   }
+
+  const normalizedTeamId = teamId.trim();
 
   const normalizedMembers = Array.isArray(members)
     ? members.map((member) => ({
@@ -101,23 +130,15 @@ export const createOrUpdateTeamProfile = async (teamProfileData) => {
       }))
     : [];
 
-  const normalizedTeamId = teamId.trim();
-
-  const existingProfile = await TeamProfile.findOne({
-    teamId: normalizedTeamId,
-  })
-    .select("+accessTokenHash")
-    .lean();
+  const existingProfile = await findProfileByTeamId(normalizedTeamId);
 
   let issuedAccessToken = null;
 
   if (existingProfile) {
-    if (!tokensMatch(accessToken, existingProfile.accessTokenHash)) {
-      const error = new Error("Invalid team access token.");
-
-      error.status = 403;
-
-      throw error;
+    if (existingProfile.accessTokenHash) {
+      requireValidToken(accessToken, existingProfile.accessTokenHash);
+    } else {
+      throwMigrationRequired();
     }
   } else {
     issuedAccessToken = generateAccessToken();
@@ -138,7 +159,7 @@ export const createOrUpdateTeamProfile = async (teamProfileData) => {
     { teamId: normalizedTeamId },
     update,
     {
-      new: true,
+      returnDocument: "after",
       upsert: true,
       runValidators: true,
       setDefaultsOnInsert: true,
@@ -156,23 +177,17 @@ export const getTeamProfile = async (teamId, accessToken) => {
     throw new Error("teamId is required.");
   }
 
-  const profile = await TeamProfile.findOne({
-    teamId: teamId.trim(),
-  })
-    .select("+accessTokenHash")
-    .lean();
+  const profile = await findProfileByTeamId(teamId.trim());
 
   if (!profile) {
     return null;
   }
 
-  if (!tokensMatch(accessToken, profile.accessTokenHash)) {
-    const error = new Error("Invalid team access token.");
-
-    error.status = 403;
-
-    throw error;
+  if (!profile.accessTokenHash) {
+    throwMigrationRequired();
   }
+
+  requireValidToken(accessToken, profile.accessTokenHash);
 
   return normalizeTeamProfile(profile);
 };

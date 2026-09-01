@@ -91,6 +91,12 @@ const teamProfileSchema = new mongoose.Schema(
       trim: true,
     },
 
+    accessTokenHash: {
+      type: String,
+      required: true,
+      select: false,
+    },
+
     name: {
       type: String,
       required: true,
