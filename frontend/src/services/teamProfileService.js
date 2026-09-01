@@ -1,5 +1,25 @@
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
+const STORAGE_KEY_PREFIX = "team_";
+
+const getStorageKey = (teamId, suffix) =>
+  `${STORAGE_KEY_PREFIX}${teamId}_${suffix}`;
+
+const storeAccessToken = (teamId, token) => {
+  if (!teamId || !token) {
+    return;
+  }
+
+  localStorage.setItem(getStorageKey(teamId, "accessToken"), token);
+};
+
+const retrieveAccessToken = (teamId) => {
+  if (!teamId) {
+    return null;
+  }
+
+  return localStorage.getItem(getStorageKey(teamId, "accessToken"));
+};
 
 const request = async (url, options = {}) => {
   const response = await fetch(url, {
@@ -15,23 +35,18 @@ const request = async (url, options = {}) => {
   try {
     payload = await response.json();
   } catch {
-    throw new Error(
-      "The server returned an invalid response."
-    );
+    throw new Error("The server returned an invalid response.");
   }
 
   if (!response.ok) {
     throw new Error(
-      payload?.error ||
-        payload?.message ||
-        "Team profile request failed."
+      payload?.error || payload?.message || "Team profile request failed.",
     );
   }
 
   if (!payload?.success) {
     throw new Error(
-      payload?.error ||
-        "The server returned an unsuccessful response."
+      payload?.error || "The server returned an unsuccessful response.",
     );
   }
 
@@ -39,10 +54,16 @@ const request = async (url, options = {}) => {
 };
 
 export const saveTeamProfile = async (profile) => {
-  return request(`${API_BASE_URL}/api/team-profile`, {
+  const result = await request(`${API_BASE_URL}/api/team-profile`, {
     method: "POST",
     body: JSON.stringify(profile),
   });
+
+  if (result?.accessToken) {
+    storeAccessToken(profile.teamId, result.accessToken);
+  }
+
+  return result;
 };
 
 export const fetchTeamProfile = async (teamId) => {
@@ -50,9 +71,17 @@ export const fetchTeamProfile = async (teamId) => {
     throw new Error("teamId is required.");
   }
 
-  return request(
-    `${API_BASE_URL}/api/team-profile/${encodeURIComponent(
-      teamId
-    )}`
-  );
+  const accessToken = retrieveAccessToken(teamId);
+
+  const queryParams = new URLSearchParams();
+
+  if (accessToken) {
+    queryParams.append("accessToken", accessToken);
+  }
+
+  const url = `${API_BASE_URL}/api/team-profile/${encodeURIComponent(
+    teamId,
+  )}?${queryParams}`;
+
+  return request(url);
 };

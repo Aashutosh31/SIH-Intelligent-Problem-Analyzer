@@ -18,6 +18,19 @@ import { getTeamId } from "../../utils/teamIdentity";
 
 import { DEFAULT_TEAM_PROFILE } from "../../types/team";
 
+const STORAGE_KEY_PREFIX = "team_";
+
+const getStorageKey = (teamId, suffix) =>
+  `${STORAGE_KEY_PREFIX}${teamId}_${suffix}`;
+
+const retrieveAccessToken = (teamId) => {
+  if (!teamId) {
+    return null;
+  }
+
+  return localStorage.getItem(getStorageKey(teamId, "accessToken"));
+};
+
 const createMemberId = () => {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
     return crypto.randomUUID();
@@ -329,6 +342,7 @@ export default function TeamProfileForm({ onSaved, onCancel }) {
     }
 
     const teamId = getTeamId();
+    const accessToken = retrieveAccessToken(teamId);
 
     setIsSaving(true);
 
@@ -343,6 +357,10 @@ export default function TeamProfileForm({ onSaved, onCancel }) {
           skills: member.skills,
         })),
       };
+
+      if (accessToken) {
+        payload.accessToken = accessToken;
+      }
 
       const savedProfile = await saveTeamProfile(payload);
 

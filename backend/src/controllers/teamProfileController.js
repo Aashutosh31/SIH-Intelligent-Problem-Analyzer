@@ -3,14 +3,9 @@ import {
   getTeamProfile,
 } from "../services/teamProfileService.js";
 
-export const saveTeamProfileController = async (
-  req,
-  res,
-  next
-) => {
+export const saveTeamProfileController = async (req, res, next) => {
   try {
-    const profile =
-      await createOrUpdateTeamProfile(req.body);
+    const profile = await createOrUpdateTeamProfile(req.body);
 
     return res.status(200).json({
       success: true,
@@ -21,15 +16,12 @@ export const saveTeamProfileController = async (
   }
 };
 
-export const getTeamProfileController = async (
-  req,
-  res,
-  next
-) => {
+export const getTeamProfileController = async (req, res, next) => {
   try {
     const { teamId } = req.params;
+    const { accessToken } = req.query;
 
-    const profile = await getTeamProfile(teamId);
+    const profile = await getTeamProfile(teamId, accessToken);
 
     if (!profile) {
       return res.status(404).json({
