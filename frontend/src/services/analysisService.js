@@ -1,29 +1,34 @@
-import { retrieveAccessToken } from "./teamProfileService";
+import { API_BASE_URL } from "../config";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
-
-export const analyzeProblem = async ({ problemStatement, teamId }) => {
+export const analyzeProblem = async ({
+  problemStatement,
+  teamId,
+  accessToken,
+}) => {
   if (!problemStatement?.trim()) {
     throw new Error("Problem statement cannot be empty.");
   }
 
-  const hasTeamContext = Boolean(teamId);
-
-  const accessToken = hasTeamContext
-    ? retrieveAccessToken(teamId)
-    : null;
+  // Only send team context (teamId + bearer token) when BOTH are present.
+  // A teamId without its access token is treated as anonymous to avoid asking
+  // the backend to authorize a team that may not exist locally/serverside.
+  const hasValidTeamContext =
+    typeof teamId === "string" &&
+    teamId.length > 0 &&
+    typeof accessToken === "string" &&
+    accessToken.length > 0;
 
   const response = await fetch(`${API_BASE_URL}/api/analyze`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...(hasTeamContext && accessToken
+      ...(hasValidTeamContext
         ? { Authorization: `Bearer ${accessToken}` }
         : {}),
     },
     body: JSON.stringify({
       problemStatement: problemStatement.trim(),
-      teamId: teamId || undefined,
+      ...(hasValidTeamContext ? { teamId } : {}),
     }),
   });
 

@@ -7,7 +7,7 @@ export const analyzeProblemController = async (
   next
 ) => {
   try {
-    const { problemStatement, teamId } = req.body;
+    const { problemStatement, teamId } = req.body || {};
 
     if (typeof problemStatement !== "string") {
       return res.status(400).json({

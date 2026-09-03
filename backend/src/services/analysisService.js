@@ -59,10 +59,12 @@ Do not invent external statistics or research.
 
   try {
     rawAnalysis = JSON.parse(response.text);
-  } catch (error) {
-    console.error("Gemini returned invalid JSON:", response.text);
+  } catch {
+    const length = response.text?.length ?? 0;
 
-    throw new Error("Gemini returned invalid JSON.");
+    throw new Error(
+      `Gemini returned invalid JSON (response length: ${length}).`
+    );
   }
 
   const analysis = normalizeGeminiAnalysis(rawAnalysis);

@@ -14,8 +14,6 @@ import {
   ArrowLeft,
 } from "lucide-react";
 
-import { MOCK_TEAM_PROFILE } from "./utils/mockData";
-
 import Header from "./components/layout/Header";
 
 import ScorecardTab from "./components/dashboard/ScorecardTab";
@@ -28,8 +26,8 @@ import TeamProfileForm from "./components/team/TeamProfileForm";
 
 import { analyzeProblem } from "./services/analysisService";
 
-import { fetchTeamProfile } from "./services/teamProfileService";
-import { getTeamId } from "./utils/teamIdentity";
+import { fetchTeamProfile, clearAccessToken } from "./services/teamProfileService";
+import { getActiveTeamContext } from "./utils/teamIdentity";
 
 const TabButton = ({ id, icon: Icon, label, activeTab, setActiveTab }) => (
   <button
@@ -59,7 +57,7 @@ export default function App() {
 
   const [activeView, setActiveView] = useState("analyzer");
 
-  const [teamName, setTeamName] = useState(MOCK_TEAM_PROFILE.name);
+  const [teamName, setTeamName] = useState("No Team Profile");
 
   const isSessionError = (err) =>
     err instanceof Error &&
@@ -70,18 +68,32 @@ export default function App() {
 
   useEffect(() => {
     const loadTeamName = async () => {
+      const ctx = getActiveTeamContext();
+
+      if (!ctx) {
+        return;
+      }
+
       try {
-        const profile = await fetchTeamProfile(getTeamId());
+        const profile = await fetchTeamProfile(ctx.teamId);
 
         if (profile?.name) {
           setTeamName(profile.name);
         }
-      } catch (error) {
+      } catch (fetchError) {
         if (
-          error instanceof Error &&
-          error.message !== "Team profile not found."
+          fetchError instanceof Error &&
+          (fetchError.status === 401 || fetchError.status === 403) &&
+          fetchError.message !== "Team profile not found."
         ) {
-          console.error("Failed to load team profile:", error);
+          // The server no longer recognizes this session — fall back to
+          // anonymous state instead of leaving the UI permanently stuck.
+          setTeamName("No Team Profile");
+        } else if (
+          fetchError instanceof Error &&
+          fetchError.message !== "Team profile not found."
+        ) {
+          console.error("Failed to load team profile:", fetchError);
         }
       }
     };
@@ -103,12 +115,55 @@ export default function App() {
     setActiveView("analyzer");
 
     try {
-      const result = await analyzeProblem({
-        problemStatement,
-        teamId: getTeamId(),
-      });
+      // Prefer an actual, saved team session. A locally generated teamId with
+      // no access token is NOT a real session — analyze anonymously instead.
+      const ctx = getActiveTeamContext();
 
-      setAnalysis(result);
+      const run = (teamContext) =>
+        analyzeProblem({
+          problemStatement,
+          teamId: teamContext?.teamId,
+          accessToken: teamContext?.accessToken,
+        });
+
+      try {
+        const result = await run(ctx);
+        setAnalysis(result);
+      } catch (err) {
+        const isTeamSession =
+          ctx &&
+          err instanceof Error &&
+          (err.status === 401 || err.status === 403);
+
+        if (isTeamSession) {
+          // The server rejected this stale/revoked session. Drop it and
+          // continue with anonymous analysis rather than staying stuck.
+          clearAccessToken(ctx.teamId);
+
+          const result = await run(null);
+          setAnalysis(result);
+          setError(
+            "Your previous team session was no longer valid, so this analysis ran without team context.",
+          );
+        } else if (
+          ctx &&
+          err instanceof Error &&
+          err.status === 404
+        ) {
+          // A saved session whose team no longer exists on the server:
+          // clear the stale token and analyze anonymously.
+          clearAccessToken(ctx.teamId);
+          setTeamName("No Team Profile");
+
+          const result = await run(null);
+          setAnalysis(result);
+          setError(
+            "Your saved team no longer exists, so this analysis ran without team context.",
+          );
+        } else {
+          throw err;
+        }
+      }
     } catch (error) {
       console.error("Problem analysis failed:", error);
 

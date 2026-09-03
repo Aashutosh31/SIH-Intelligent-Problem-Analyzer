@@ -5,11 +5,31 @@ import {
 
 export const saveTeamProfileController = async (req, res, next) => {
   try {
+    if (process.env.NODE_ENV !== "production") {
+      const contentLength = req.headers["content-length"];
+      console.debug(
+        `[teamProfile] ${req.method} ${req.url} body=${typeof req.body} keys=${JSON.stringify(
+          Object.keys(req.body || {}),
+        )} content-type=${req.headers["content-type"] || "none"} content-length=${
+          contentLength ?? "n/a"
+        }`,
+      );
+    }
+
+    if (!req.body || typeof req.body !== "object") {
+      return res.status(400).json({
+        success: false,
+        error: "Request body is required.",
+      });
+    }
+
+    const { teamId, name, members, preferences } = req.body;
+
     const profile = await createOrUpdateTeamProfile({
-      teamId: req.body.teamId,
-      name: req.body.name,
-      members: req.body.members,
-      preferences: req.body.preferences,
+      teamId,
+      name,
+      members,
+      preferences,
       accessToken: req.teamAccessToken,
     });
 

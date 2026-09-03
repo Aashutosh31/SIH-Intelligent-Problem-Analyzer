@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: sih-intelligent-problem-analyzer
+    runtime: node
+    rootDir: backend
+    buildCommand: npm ci
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-3.6-flash
+      - key: FRONTEND_URL
+        sync: false

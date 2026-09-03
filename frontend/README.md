@@ -1,16 +1,28 @@
-# React + Vite
+# SIH Intelligent Problem Analyzer — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + Vite SPA for the SIH Intelligent Problem Analyzer.
 
-Currently, two official plugins are available:
+See the **[root README](../README.md)** for the full project overview, local
+setup, environment variables, and deployment instructions for Vercel and
+Render.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Environment
 
-## React Compiler
+Create `frontend/.env` for local development:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```
+VITE_API_URL=http://localhost:5000
+```
 
-## Expanding the ESLint configuration
+`VITE_API_URL` is required for production builds; if it is missing in a
+production build the app fails loudly instead of calling `localhost`.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Scripts
+
+```bash
+npm install
+npm run dev      # Vite dev server
+npm run build    # production build → dist/
+npm run lint     # ESLint
+npm run preview  # preview the production build
+```

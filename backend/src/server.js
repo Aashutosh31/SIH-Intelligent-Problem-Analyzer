@@ -1,27 +1,21 @@
-import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import app from './app.js';
-
-dotenv.config();
-
-const PORT = process.env.PORT || 5000;
-const MONGO_URI = process.env.MONGO_URI;
+import { config } from './config.js';
 
 const startServer = async () => {
   try {
-    if (!MONGO_URI) {
+    if (!config.mongoUri) {
       throw new Error('MONGO_URI is not defined in the environment.');
     }
 
-    await mongoose.connect(MONGO_URI);
+    await mongoose.connect(config.mongoUri);
 
     console.log('✅ Production Database Connected');
 
-    app.listen(PORT, () => {
+    app.listen(config.port, () => {
       console.log(
-        `🚀 Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`
+        `🚀 Server running in ${config.env} mode on port ${config.port}`
       );
-      console.log(`📡 API available at http://localhost:${PORT}`);
     });
   } catch (error) {
     console.error('❌ Server startup failed:', error.message);

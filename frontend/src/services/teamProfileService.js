@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+import { API_BASE_URL } from "../config";
 
 const ACCESS_TOKEN_PREFIX = "team_access_token_";
 
@@ -21,6 +21,14 @@ export const retrieveAccessToken = (teamId) => {
   return localStorage.getItem(getAccessTokenKey(teamId));
 };
 
+export const clearAccessToken = (teamId) => {
+  if (!teamId) {
+    return;
+  }
+
+  localStorage.removeItem(getAccessTokenKey(teamId));
+};
+
 const buildAuthHeaders = (teamId) => {
   const accessToken = retrieveAccessToken(teamId);
 
@@ -30,12 +38,14 @@ const buildAuthHeaders = (teamId) => {
 };
 
 const request = async (url, options = {}) => {
+  const { headers: callerHeaders, ...restOptions } = options;
+
   const response = await fetch(url, {
+    ...restOptions,
     headers: {
       "Content-Type": "application/json",
-      ...(options.headers || {}),
+      ...(callerHeaders || {}),
     },
-    ...options,
   });
 
   let payload;
@@ -66,6 +76,22 @@ const request = async (url, options = {}) => {
 };
 
 export const saveTeamProfile = async (profile) => {
+  if (!profile || typeof profile !== "object") {
+    throw new Error("Profile must be a non-null object.");
+  }
+
+  if (typeof profile.teamId !== "string" || !profile.teamId.trim()) {
+    throw new Error("teamId is required.");
+  }
+
+  if (typeof profile.name !== "string" || !profile.name.trim()) {
+    throw new Error("Team name is required.");
+  }
+
+  if (!Array.isArray(profile.members)) {
+    throw new Error("members must be an array.");
+  }
+
   const result = await request(`${API_BASE_URL}/api/team-profile`, {
     method: "POST",
     headers: buildAuthHeaders(profile.teamId),
