@@ -2,7 +2,6 @@ import { normalizeSkill } from "../utils/skillNormalizer.js";
 
 const MIN_LEARNING_PROFICIENCY = 1;
 const STRONG_PROFICIENCY = 8;
-const PARTIAL_PROFICIENCY = 5;
 
 const clampProficiency = (value) => {
   const numericValue = Number(value);
