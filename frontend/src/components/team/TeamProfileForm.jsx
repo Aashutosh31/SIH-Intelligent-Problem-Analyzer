@@ -7,6 +7,7 @@ import {
   SlidersHorizontal,
   Loader2,
   AlertCircle,
+  Code,
 } from "lucide-react";
 
 import {
@@ -394,10 +395,9 @@ export default function TeamProfileForm({ onSaved, onCancel }) {
 
   if (isLoading) {
     return (
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-8 flex flex-col items-center justify-center min-h-90">
+      <div className="bg-[#0a0a0a] border border-white/10 rounded-3xl p-12 flex flex-col items-center justify-center shadow-2xl min-h-90">
         <Loader2 size={32} className="animate-spin text-blue-500 mb-4" />
-
-        <p className="text-sm text-slate-400">Loading team profile...</p>
+        <p className="text-sm text-zinc-500 font-mono">Loading terminal profile...</p>
       </div>
     );
   }
@@ -405,62 +405,53 @@ export default function TeamProfileForm({ onSaved, onCancel }) {
   return (
     <form
       onSubmit={handleSave}
-      className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg overflow-hidden"
+      className="bg-[#0a0a0a] border border-white/10 rounded-3xl shadow-2xl overflow-hidden relative"
     >
+      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_top_right,rgba(59,130,246,0.05),transparent_50%)]"></div>
+
       {/* Header */}
-      <div className="px-6 py-5 border-b border-slate-800">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <UserRound size={18} className="text-blue-400" />
-
-              <span className="text-xs font-bold uppercase tracking-wider text-blue-400">
-                Team Profile
-              </span>
-            </div>
-
-            <h2 className="text-xl font-semibold text-white">
-              Tell us about your team
-            </h2>
-
-            <p className="text-sm text-slate-400 mt-1">
-              This information will later be used to calculate personalized
-              team-fit scores.
-            </p>
+      <div className="px-8 py-6 border-b border-white/5 relative z-10 flex items-start justify-between">
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <UserRound size={16} className="text-blue-500" />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-blue-500">Team Profile</span>
           </div>
 
-          {onCancel && (
-            <button
-              type="button"
-              onClick={onCancel}
-              className="text-sm text-slate-400 hover:text-white transition-colors"
-            >
-              Cancel
-            </button>
-          )}
+          <h2 className="text-2xl font-semibold tracking-tight text-white">Define Your Squad</h2>
+
+          <p className="text-sm text-zinc-500 mt-1">
+            This information will later be used to calculate personalized team-fit scores.
+          </p>
         </div>
+
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="text-sm font-medium text-zinc-500 hover:text-white transition-colors"
+          >
+            Cancel
+          </button>
+        )}
       </div>
 
-      <div className="p-6 space-y-8">
+      <div className="p-8 space-y-10 relative z-10">
         {/* Error */}
         {error && (
-          <div className="flex items-start gap-3 rounded-lg border border-red-900/60 bg-red-950/30 p-4">
+          <div className="flex items-start gap-3 rounded-xl border border-red-500/20 bg-red-500/10 p-4">
             <AlertCircle size={18} className="text-red-400 mt-0.5 shrink-0" />
 
             <div>
-              <p className="text-sm font-medium text-red-300">
-                Unable to save profile
-              </p>
-
-              <p className="text-sm text-red-200/80 mt-1">{error}</p>
+              <p className="text-sm font-medium text-red-200">Unable to save profile</p>
+              <p className="text-sm text-red-400/80 mt-1">{error}</p>
             </div>
           </div>
         )}
 
         {/* Success */}
         {successMessage && (
-          <div className="rounded-lg border border-emerald-900/60 bg-emerald-950/30 p-4">
-            <p className="text-sm text-emerald-300">{successMessage}</p>
+          <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-300">
+            {successMessage}
           </div>
         )}
 
@@ -468,7 +459,7 @@ export default function TeamProfileForm({ onSaved, onCancel }) {
         <section>
           <label
             htmlFor="team-name"
-            className="block text-sm font-medium text-slate-200 mb-2"
+            className="block text-sm font-medium text-zinc-300 mb-2"
           >
             Team name
           </label>
@@ -484,17 +475,16 @@ export default function TeamProfileForm({ onSaved, onCancel }) {
             }
             placeholder="e.g. Team Syntax Error"
             maxLength={100}
-            className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-slate-600 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all font-mono"
           />
         </section>
 
         {/* Members */}
         <section>
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-4 border-b border-white/5 pb-2">
             <div>
-              <h3 className="text-sm font-semibold text-white">Team members</h3>
-
-              <p className="text-xs text-slate-500 mt-1">
+              <h3 className="text-sm font-medium text-white">Team members</h3>
+              <p className="text-xs text-zinc-500 mt-1">
                 Add the people who will actually build the SIH solution.
               </p>
             </div>
@@ -502,10 +492,9 @@ export default function TeamProfileForm({ onSaved, onCancel }) {
             <button
               type="button"
               onClick={addMember}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-700 bg-slate-800 text-sm text-slate-200 hover:bg-slate-700 transition-colors"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs font-medium text-zinc-300 transition-colors"
             >
-              <Plus size={16} />
-              Add member
+              <Plus size={14} /> Add Member
             </button>
           </div>
 
@@ -513,10 +502,10 @@ export default function TeamProfileForm({ onSaved, onCancel }) {
             {profile.members.map((member, index) => (
               <div
                 key={member.id}
-                className="border border-slate-800 bg-slate-950/70 rounded-xl p-4"
+                className="border border-white/5 bg-black/40 rounded-2xl p-5 hover:border-white/10 transition-all"
               >
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-600">
                     Member {index + 1}
                   </span>
 
@@ -524,7 +513,7 @@ export default function TeamProfileForm({ onSaved, onCancel }) {
                     <button
                       type="button"
                       onClick={() => removeMember(member.id)}
-                      className="p-2 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                      className="p-2 rounded-lg text-zinc-600 hover:text-red-400 hover:bg-red-500/10 transition-colors"
                       aria-label={`Remove member ${index + 1}`}
                     >
                       <Trash2 size={16} />
@@ -532,11 +521,11 @@ export default function TeamProfileForm({ onSaved, onCancel }) {
                   )}
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-4">
+                <div className="grid md:grid-cols-2 gap-4 mb-4">
                   <div>
                     <label
                       htmlFor={`member-name-${member.id}`}
-                      className="block text-xs font-medium text-slate-400 mb-2"
+                      className="block text-xs font-medium text-zinc-500 mb-2"
                     >
                       Name
                     </label>
@@ -551,14 +540,14 @@ export default function TeamProfileForm({ onSaved, onCancel }) {
                         })
                       }
                       placeholder="Member name"
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-slate-600 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full bg-black border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-zinc-700 focus:outline-none focus:border-blue-500 transition-all"
                     />
                   </div>
 
                   <div>
                     <label
                       htmlFor={`member-role-${member.id}`}
-                      className="block text-xs font-medium text-slate-400 mb-2"
+                      className="block text-xs font-medium text-zinc-500 mb-2"
                     >
                       Primary role
                     </label>
@@ -573,15 +562,15 @@ export default function TeamProfileForm({ onSaved, onCancel }) {
                         })
                       }
                       placeholder="e.g. Backend / AI Engineer"
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-slate-600 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full bg-black border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-zinc-700 focus:outline-none focus:border-blue-500 transition-all"
                     />
                   </div>
                 </div>
 
-                <div className="mt-4">
+                <div>
                   <label
                     htmlFor={`member-skills-${member.id}`}
-                    className="block text-xs font-medium text-slate-400 mb-2"
+                    className="block text-xs font-medium text-zinc-500 mb-3"
                   >
                     Skills
                   </label>
@@ -590,17 +579,17 @@ export default function TeamProfileForm({ onSaved, onCancel }) {
                     {member.skills.map((skill) => (
                       <div
                         key={skill.name}
-                        className="rounded-lg border border-slate-800 bg-slate-900/70 p-3"
+                        className="flex flex-col bg-zinc-900/50 border border-white/5 rounded-lg p-3"
                       >
                         <div className="flex items-center justify-between gap-3 mb-3">
-                          <span className="inline-flex items-center rounded-md border border-blue-500/20 bg-blue-500/10 px-2.5 py-1 text-xs font-medium text-blue-300">
+                          <span className="inline-flex items-center rounded-md border border-blue-500/20 bg-blue-500/10 px-2.5 py-1 text-xs font-mono text-blue-300">
                             {skill.name}
                           </span>
 
                           <button
                             type="button"
                             onClick={() => removeSkill(member.id, skill.name)}
-                            className="text-xs text-slate-500 hover:text-red-400 transition-colors"
+                            className="text-xs text-zinc-500 hover:text-red-400 transition-colors"
                             aria-label={`Remove ${skill.name}`}
                           >
                             Remove
@@ -611,12 +600,12 @@ export default function TeamProfileForm({ onSaved, onCancel }) {
                           <div className="flex items-center justify-between mb-2">
                             <label
                               htmlFor={`proficiency-${member.id}-${skill.name}`}
-                              className="text-xs text-slate-500"
+                              className="text-xs text-zinc-500"
                             >
                               Proficiency
                             </label>
 
-                            <span className="text-xs font-semibold text-blue-400">
+                            <span className="text-xs font-mono text-blue-400">
                               {skill.proficiency}/10
                             </span>
                           </div>
@@ -635,10 +624,10 @@ export default function TeamProfileForm({ onSaved, onCancel }) {
                                 event.target.value,
                               )
                             }
-                            className="w-full accent-blue-500"
+                            className="w-full h-1 bg-zinc-800 rounded-full appearance-none accent-blue-500 cursor-pointer"
                           />
 
-                          <div className="flex justify-between mt-1 text-[10px] text-slate-600">
+                          <div className="flex justify-between mt-1 text-[10px] text-zinc-600">
                             <span>Beginner</span>
                             <span>Expert</span>
                           </div>
@@ -646,7 +635,9 @@ export default function TeamProfileForm({ onSaved, onCancel }) {
                       </div>
                     ))}
 
-                    <div className="w-full min-h-[46px] bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 flex flex-wrap items-center gap-2 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent">
+                    <div className="bg-black border border-white/10 rounded-lg px-3 py-2 flex items-center focus-within:border-blue-500 transition-colors min-h-[46px]">
+                      <Code size={14} className="text-zinc-600 mr-2" />
+
                       <input
                         id={`member-skills-${member.id}`}
                         type="text"
@@ -661,12 +652,12 @@ export default function TeamProfileForm({ onSaved, onCancel }) {
                           handleSkillKeyDown(event, member.id)
                         }
                         placeholder="Type a skill and press Enter or comma"
-                        className="flex-1 min-w-[180px] bg-transparent border-0 outline-none text-sm text-white placeholder:text-slate-600 py-1"
+                        className="w-full bg-transparent border-0 outline-none text-xs font-mono text-white placeholder:text-zinc-700"
                       />
                     </div>
                   </div>
 
-                  <p className="text-xs text-slate-600 mt-2">
+                  <p className="text-xs text-zinc-600 mt-2">
                     Add skills with Enter or comma, then set each skill's
                     proficiency from 1 to 10.
                   </p>
@@ -678,38 +669,30 @@ export default function TeamProfileForm({ onSaved, onCancel }) {
 
         {/* Preferences */}
         <section>
-          <div className="flex items-center gap-2 mb-4">
-            <SlidersHorizontal size={17} className="text-blue-400" />
+          <div className="flex items-center gap-2 mb-4 border-b border-white/5 pb-2">
+            <SlidersHorizontal size={14} className="text-zinc-400" />
 
-            <div>
-              <h3 className="text-sm font-semibold text-white">
-                Team preferences
-              </h3>
-
-              <p className="text-xs text-slate-500 mt-1">
-                These will help personalize future problem recommendations.
-              </p>
-            </div>
+            <h3 className="text-sm font-medium text-white">Team preferences</h3>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-6 bg-black/40 border border-white/5 p-5 rounded-2xl">
             {/* Software only */}
-            <label className="flex items-start gap-3 cursor-pointer">
+            <label className="flex items-start gap-3 cursor-pointer group">
               <input
                 type="checkbox"
                 checked={profile.preferences.softwareOnly}
                 onChange={(event) =>
                   updatePreference("softwareOnly", event.target.checked)
                 }
-                className="mt-1 h-4 w-4 rounded border-slate-700 bg-slate-950 text-blue-600 focus:ring-blue-500"
+                className="mt-1 h-4 w-4 rounded bg-black border-white/10 text-blue-600 focus:ring-0 accent-blue-500"
               />
 
               <span>
-                <span className="block text-sm font-medium text-slate-200">
+                <span className="block text-sm font-medium text-zinc-200 group-hover:text-white transition-colors">
                   Prefer software-only problems
                 </span>
 
-                <span className="block text-xs text-slate-500 mt-1">
+                <span className="block text-xs text-zinc-500 mt-1">
                   We'll eventually use this when ranking hardware-dependent SIH
                   problems.
                 </span>
@@ -718,15 +701,9 @@ export default function TeamProfileForm({ onSaved, onCancel }) {
 
             {/* Hardware */}
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <label
-                  htmlFor="hardware-comfort"
-                  className="text-sm font-medium text-slate-200"
-                >
-                  Hardware comfort
-                </label>
-
-                <span className="text-sm font-semibold text-blue-400">
+              <div className="flex justify-between mb-2">
+                <span className="text-xs font-medium text-zinc-400">Hardware comfort</span>
+                <span className="text-xs font-mono text-blue-400">
                   {profile.preferences.hardwareComfort}/10
                 </span>
               </div>
@@ -744,21 +721,15 @@ export default function TeamProfileForm({ onSaved, onCancel }) {
                     Number(event.target.value),
                   )
                 }
-                className="w-full accent-blue-500"
+                className="w-full h-1 bg-zinc-800 rounded-full appearance-none accent-blue-500 cursor-pointer"
               />
             </div>
 
             {/* AI/ML */}
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <label
-                  htmlFor="ai-ml-comfort"
-                  className="text-sm font-medium text-slate-200"
-                >
-                  AI / ML comfort
-                </label>
-
-                <span className="text-sm font-semibold text-blue-400">
+              <div className="flex justify-between mb-2">
+                <span className="text-xs font-medium text-zinc-400">AI / ML comfort</span>
+                <span className="text-xs font-mono text-blue-400">
                   {profile.preferences.aiMlComfort}/10
                 </span>
               </div>
@@ -773,21 +744,15 @@ export default function TeamProfileForm({ onSaved, onCancel }) {
                 onChange={(event) =>
                   updatePreference("aiMlComfort", Number(event.target.value))
                 }
-                className="w-full accent-blue-500"
+                className="w-full h-1 bg-zinc-800 rounded-full appearance-none accent-blue-500 cursor-pointer"
               />
             </div>
 
             {/* Willingness to learn */}
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <label
-                  htmlFor="willingness-to-learn"
-                  className="text-sm font-medium text-slate-200"
-                >
-                  Willingness to learn new technologies
-                </label>
-
-                <span className="text-sm font-semibold text-blue-400">
+              <div className="flex justify-between mb-2">
+                <span className="text-xs font-medium text-zinc-400">Willingness to learn new technologies</span>
+                <span className="text-xs font-mono text-blue-400">
                   {profile.preferences.willingnessToLearn}/10
                 </span>
               </div>
@@ -805,7 +770,7 @@ export default function TeamProfileForm({ onSaved, onCancel }) {
                     Number(event.target.value),
                   )
                 }
-                className="w-full accent-blue-500"
+                className="w-full h-1 bg-zinc-800 rounded-full appearance-none accent-blue-500 cursor-pointer"
               />
             </div>
           </div>
@@ -813,13 +778,13 @@ export default function TeamProfileForm({ onSaved, onCancel }) {
       </div>
 
       {/* Footer */}
-      <div className="px-6 py-4 border-t border-slate-800 bg-slate-950/40 flex items-center justify-end gap-3">
+      <div className="px-8 py-5 border-t border-white/5 bg-black/50 flex justify-end gap-4 relative z-10">
         {onCancel && (
           <button
             type="button"
             onClick={onCancel}
             disabled={isSaving}
-            className="px-4 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-colors disabled:opacity-50"
+            className="text-sm font-medium text-zinc-500 hover:text-white transition-colors"
           >
             Cancel
           </button>
@@ -828,7 +793,7 @@ export default function TeamProfileForm({ onSaved, onCancel }) {
         <button
           type="submit"
           disabled={isSaving}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-6 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium transition-all shadow-[0_0_15px_rgba(37,99,235,0.4)] disabled:opacity-50 flex items-center gap-2"
         >
           {isSaving ? (
             <>
