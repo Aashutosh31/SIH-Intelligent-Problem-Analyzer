@@ -17,6 +17,10 @@ export const config = {
   mongoUri: process.env.MONGO_URI || "",
   geminiApiKey: process.env.GEMINI_API_KEY || "",
   geminiModel: process.env.GEMINI_MODEL || "gemini-3.6-flash",
+  // Groq is the OPTIONAL fallback provider. Absent key = fallback simply
+  // unavailable; the app must start and serve Gemini-only traffic normally.
+  groqApiKey: process.env.GROQ_API_KEY || "",
+  groqModel: process.env.GROQ_MODEL || "openai/gpt-oss-120b",
   frontendUrl: normalizeOrigin(process.env.FRONTEND_URL),
 };
 

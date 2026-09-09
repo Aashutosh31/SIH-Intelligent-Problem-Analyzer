@@ -94,6 +94,9 @@ Open the Vite URL (default `http://localhost:5173`).
 | `GEMINI_MODEL` | no (default `gemini-3.6-flash`) | Gemini model ID |
 | `FRONTEND_URL` | yes (production) | Exact frontend origin for CORS (no trailing slash) |
 | `GEMINI_REQUEST_TIMEOUT_MS` | no (default 60000) | Timeout per Gemini attempt |
+| `GROQ_API_KEY` | no | Groq API key — enables the optional fallback provider. Blank = Gemini-only |
+| `GROQ_MODEL` | no (default `openai/gpt-oss-120b`) | Groq model ID for fallback analyses |
+| `GROQ_REQUEST_TIMEOUT_MS` | no (default 45000) | Timeout per Groq attempt |
 
 ### Frontend
 
@@ -116,6 +119,22 @@ Open the Vite URL (default `http://localhost:5173`).
    [Google AI Studio](https://aistudio.google.com/).
 2. Set `GEMINI_API_KEY` in your backend environment.
 3. Optionally set `GEMINI_MODEL` (default `gemini-3.6-flash`).
+
+## Groq Fallback Setup (optional)
+
+Gemini is the primary provider. [Groq](https://groq.com/) acts as an
+automatic fallback: if Gemini fails transiently (HTTP 429/500/502/503/504,
+network failure, or request timeout), the backend retries the same analysis
+once via Groq and returns the identical response shape. Auth errors (401/403),
+bad input (4xx), and programmer errors never trigger fallback.
+
+1. Create an API key at [Groq Console](https://console.groq.com/).
+2. Set `GROQ_API_KEY` in your backend environment.
+3. Optionally set `GROQ_MODEL` (default `openai/gpt-oss-120b`) and
+   `GROQ_REQUEST_TIMEOUT_MS` (default 45000).
+
+Leave `GROQ_API_KEY` blank to run Gemini-only — startup does not require it.
+The frontend never sees provider details or either API key.
 
 ## Production Deployment
 
@@ -142,6 +161,8 @@ in Vercel — `VITE_*` variables are inlined into the client bundle.
 | `MONGO_URI` | MongoDB Atlas SRV string |
 | `GEMINI_API_KEY` | Google AI Studio key |
 | `GEMINI_MODEL` | `gemini-3.6-flash` |
+| `GROQ_API_KEY` | Groq Console key (optional — enables fallback) |
+| `GROQ_MODEL` | `openai/gpt-oss-120b` |
 | `FRONTEND_URL` | `https://<your-app>.vercel.app` (exact origin) |
 | `NODE_ENV` | `production` |
 | `PORT` | auto-assigned by Render (server honors `process.env.PORT`) |

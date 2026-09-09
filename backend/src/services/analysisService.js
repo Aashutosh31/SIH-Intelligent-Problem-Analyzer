@@ -1,4 +1,4 @@
-import { generateGeminiContent } from "./geminiProvider.js";
+import { generateAnalysisContent } from "./analysisProvider.js";
 import { ANALYSIS_SYSTEM_PROMPT } from "../prompts/analysisPrompt.js";
 import { normalizeGeminiAnalysis } from "./analysisNormalizer.js";
 import { calculateTeamFit } from "./teamFitService.js";
@@ -50,20 +50,26 @@ Do not invent external statistics or research.
     throw new Error("Problem statement cannot be empty.");
   }
 
-  const response = await generateGeminiContent({
+  // Gemini is the primary provider; Groq is attempted automatically only
+  // when Gemini fails transiently AND a Groq key is configured. The result
+  // shape is provider-independent: raw text goes through the same shared
+  // JSON parse + normalizer either way.
+  const { text: rawText, provider } = await generateAnalysisContent({
     prompt,
     systemInstruction: ANALYSIS_SYSTEM_PROMPT,
   });
 
+  const providerLabel = provider === "groq" ? "Groq" : "Gemini";
+
   let rawAnalysis;
 
   try {
-    rawAnalysis = JSON.parse(response.text);
+    rawAnalysis = JSON.parse(rawText);
   } catch {
-    const length = response.text?.length ?? 0;
+    const length = rawText?.length ?? 0;
 
     throw new Error(
-      `Gemini returned invalid JSON (response length: ${length}).`
+      `${providerLabel} returned invalid JSON (response length: ${length}).`
     );
   }
 
@@ -99,7 +105,11 @@ Do not invent external statistics or research.
     analysis.skillGapRecommendations = skillGapRecommendations;
   }
 
-  console.log("✅ Gemini analysis generated successfully.");
+  if (provider === "groq") {
+    console.log("✅ Groq fallback analysis generated successfully.");
+  } else {
+    console.log("✅ Gemini analysis generated successfully.");
+  }
 
   return analysis;
 };
