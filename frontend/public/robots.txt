@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://sih-intelligent-problem-analyzer.vercel.app/sitemap.xml
