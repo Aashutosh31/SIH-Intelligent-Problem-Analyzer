@@ -2,48 +2,62 @@ import { ShieldAlert } from 'lucide-react';
 
 const VerdictTab = ({ verdict, risks }) => {
   if (!verdict || !risks) return null;
+
+  // Determine styling based on the decision
   const isGo = verdict.decision.includes("GO");
   const isConsider = verdict.decision.includes("CONSIDER");
-  
-  const bannerBg = isGo ? "bg-emerald-500/10 border-emerald-500/30" : isConsider ? "bg-amber-500/10 border-amber-500/30" : "bg-red-500/10 border-red-500/30";
-  const bannerText = isGo ? "text-emerald-400" : isConsider ? "text-amber-400" : "text-red-400";
-  const shadowColor = isGo ? "rgba(16,185,129,0.2)" : isConsider ? "rgba(245,158,11,0.2)" : "rgba(239,68,68,0.2)";
+
+  const bannerBg = isGo ? "bg-emerald-500/[0.07] border-emerald-500/20" :
+                   isConsider ? "bg-amber-500/[0.07] border-amber-500/20" :
+                   "bg-red-500/[0.07] border-red-500/20";
+
+  const bannerText = isGo ? "text-emerald-400" :
+                     isConsider ? "text-amber-400" :
+                     "text-red-400";
+
+  const bannerGlow = isGo ? "shadow-[0_0_60px_rgba(16,185,129,0.12)]" :
+                     isConsider ? "shadow-[0_0_60px_rgba(245,158,11,0.12)]" :
+                     "shadow-[0_0_60px_rgba(239,68,68,0.12)]";
 
   return (
     <div className="space-y-8">
-      <div 
-        className={`p-10 rounded-3xl border flex flex-col items-center justify-center text-center ${bannerBg} relative overflow-hidden`}
-        style={{ boxShadow: `0 0 40px ${shadowColor}` }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/20 pointer-events-none"></div>
-        <h2 className={`text-5xl md:text-6xl font-black tracking-tighter mb-4 relative z-10 ${bannerText} drop-shadow-md`}>
+      {/* Final Verdict Banner */}
+      <div className={`relative overflow-hidden p-8 sm:p-10 rounded-2xl border flex flex-col items-center justify-center text-center ${bannerBg} ${bannerGlow}`}>
+        <span className={`text-[11px] font-mono uppercase tracking-[0.2em] mb-3 ${bannerText} opacity-70`}>
+          Final Verdict
+        </span>
+        <h2 className={`text-4xl sm:text-5xl font-black tracking-tight mb-4 ${bannerText}`}>
           {verdict.decision}
         </h2>
-        <p className="text-base max-w-2xl text-zinc-300 leading-relaxed relative z-10">
+        <p className="text-sm max-w-2xl text-slate-400 leading-relaxed">
           {verdict.reasoning}
         </p>
       </div>
 
+      {/* Project Killers (Red Flags) */}
       <div>
-        <h3 className="text-lg font-semibold tracking-tight text-white mb-5 flex items-center">
-          <ShieldAlert size={18} className="mr-2 text-red-500" />
-          Project Killers (Red Flags)
-        </h3>
-        <div className="grid gap-3">
+        <div className="flex items-center gap-2 mb-4">
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20">
+            <ShieldAlert size={14} className="text-red-400" />
+          </span>
+          <h3 className="text-lg font-semibold text-white tracking-tight">
+            Project Killers (Red Flags)
+          </h3>
+        </div>
+        <div className="space-y-3">
           {risks.redFlags.map((flag, idx) => {
-            const isCrit = flag.severity === 'Critical';
-            const isHigh = flag.severity === 'High';
-            const severityColor = isCrit ? 'bg-red-500' : isHigh ? 'bg-orange-500' : 'bg-yellow-500';
-            const textColor = isCrit ? 'text-red-400' : isHigh ? 'text-orange-400' : 'text-yellow-400';
-            const borderColor = isCrit ? 'border-red-500/20' : isHigh ? 'border-orange-500/20' : 'border-yellow-500/20';
-            const bgClass = isCrit ? 'bg-red-500/5' : isHigh ? 'bg-orange-500/5' : 'bg-yellow-500/5';
+            const severityColor = flag.severity === 'Critical' ? 'bg-red-500' :
+                                  flag.severity === 'High' ? 'bg-orange-500' : 'bg-yellow-500';
+            
+            const textColor = flag.severity === 'Critical' ? 'text-red-400' :
+                              flag.severity === 'High' ? 'text-orange-400' : 'text-yellow-400';
 
             return (
-              <div key={idx} className={`p-5 rounded-2xl border ${borderColor} ${bgClass} flex items-start hover:bg-white/[0.02] transition-colors`}>
-                <div className={`mt-1.5 w-2 h-2 rounded-full mr-4 flex-shrink-0 shadow-[0_0_8px_currentColor] ${severityColor} text-transparent`}>.</div>
+              <div key={idx} className="bg-white/[0.02] hover:bg-white/[0.03] transition-colors p-4 rounded-xl border border-white/10 flex items-start">
+                <div className={`mt-1.5 w-2 h-2 rounded-full mr-3 flex-shrink-0 ${severityColor}`}></div>
                 <div>
-                  <p className="text-sm text-zinc-200 leading-relaxed">{flag.risk}</p>
-                  <span className={`text-[10px] uppercase tracking-widest mt-3 inline-block font-bold ${textColor}`}>
+                  <p className="text-sm text-slate-200 leading-relaxed">{flag.risk}</p>
+                  <span className={`text-xs mt-2 inline-block font-medium ${textColor}`}>
                     {flag.severity} Severity
                   </span>
                 </div>

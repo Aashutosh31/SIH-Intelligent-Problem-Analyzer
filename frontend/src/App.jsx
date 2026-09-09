@@ -29,20 +29,17 @@ import { analyzeProblem } from "./services/analysisService";
 import { fetchTeamProfile, clearAccessToken } from "./services/teamProfileService";
 import { getActiveTeamContext } from "./utils/teamIdentity";
 
-const SESSION_EXPIRED_MESSAGE =
-  "Your team session is no longer authorized. Please recreate or reconnect the team profile.";
-
 const TabButton = ({ id, icon: Icon, label, activeTab, setActiveTab }) => (
   <button
     type="button"
     onClick={() => setActiveTab(id)}
-    className={`flex items-center space-x-2 px-5 py-2.5 rounded-xl transition-all duration-300 text-sm font-medium whitespace-nowrap ${
+    className={`relative flex shrink-0 items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium transition-all duration-200 ${
       activeTab === id
-        ? "bg-[#1a1a1a] text-white shadow-md border border-white/10"
-        : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5 border border-transparent"
+        ? "bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.15)]"
+        : "text-slate-400 hover:text-white hover:bg-white/[0.06]"
     }`}
   >
-    <Icon size={16} className={activeTab === id ? "text-blue-400" : ""} />
+    <Icon size={15} />
     <span>{label}</span>
   </button>
 );
@@ -65,6 +62,9 @@ export default function App() {
   const isSessionError = (err) =>
     err instanceof Error &&
     (err.status === 401 || err.status === 403);
+
+  const SESSION_EXPIRED_MESSAGE =
+    "Your team session is no longer authorized. Please recreate or reconnect the team profile.";
 
   useEffect(() => {
     const loadTeamName = async () => {
@@ -165,6 +165,8 @@ export default function App() {
         }
       }
     } catch (error) {
+      console.error("Problem analysis failed:", error);
+
       setError(
         isSessionError(error)
           ? SESSION_EXPIRED_MESSAGE
@@ -186,8 +188,20 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-zinc-200 font-sans selection:bg-blue-500/30 relative">
-      <div className="absolute inset-0 z-0 pointer-events-none bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px]"></div>
+    <div className="min-h-screen bg-black text-slate-200 font-sans antialiased selection:bg-blue-500/30 relative">
+      {/* Ambient background: subtle grid + glow, matches the rest of the site */}
+      <div
+        className="pointer-events-none fixed inset-0 opacity-[0.4]"
+        style={{
+          backgroundImage:
+            "linear-gradient(to right, rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.04) 1px, transparent 1px)",
+          backgroundSize: "44px 44px",
+          maskImage:
+            "radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 100%)",
+        }}
+      />
+
+      <div className="pointer-events-none fixed -top-40 left-1/2 h-[500px] w-[900px] -translate-x-1/2 rounded-full bg-blue-600/10 blur-[120px]" />
 
       <Header
         teamName={teamName}
@@ -195,122 +209,219 @@ export default function App() {
       />
 
       {activeView === "team-profile" ? (
-        <main className="max-w-3xl mx-auto px-4 py-12 relative z-10">
+        <main className="relative max-w-4xl mx-auto px-4 sm:px-6 py-10">
           <div className="mb-6">
             <button
               type="button"
               onClick={() => setActiveView("analyzer")}
-              className="inline-flex items-center gap-2 text-xs font-mono text-zinc-500 hover:text-white transition-colors"
+              className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors group"
             >
-              <ArrowLeft size={14} /> Back to Analyzer
+              <ArrowLeft
+                size={16}
+                className="transition-transform group-hover:-translate-x-0.5"
+              />
+              Back to Analyzer
             </button>
           </div>
+
           <TeamProfileForm
             onSaved={handleTeamProfileSaved}
             onCancel={() => setActiveView("analyzer")}
           />
         </main>
       ) : (
-        <main className="max-w-7xl mx-auto px-4 py-10 grid grid-cols-1 xl:grid-cols-12 gap-8 relative z-10">
-          <div className="xl:col-span-4 space-y-6">
-            <div className="bg-[#0a0a0a] border border-white/10 rounded-2xl shadow-2xl overflow-hidden relative group">
-              <div className="flex items-center px-4 py-3 bg-[#111] border-b border-white/5">
-                <div className="flex space-x-2">
-                  <div className="w-3 h-3 rounded-full bg-red-500/80"></div>
-                  <div className="w-3 h-3 rounded-full bg-yellow-500/80"></div>
-                  <div className="w-3 h-3 rounded-full bg-green-500/80"></div>
-                </div>
-                <div className="mx-auto text-[10px] font-mono text-zinc-600 flex items-center">
-                  <Target size={12} className="mr-2 text-blue-500" /> ~/sih/problem-statement.txt
-                </div>
+        <main className="relative max-w-6xl mx-auto px-4 sm:px-6 py-10 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+          {/* Left Column */}
+          <div className="lg:col-span-4 space-y-6">
+            <div className="group relative overflow-hidden bg-white/[0.03] border border-white/10 rounded-2xl p-5 sm:p-6 shadow-2xl transition-colors hover:border-white/15">
+              <div className="pointer-events-none absolute -top-24 -right-24 h-48 w-48 rounded-full bg-blue-500/10 blur-3xl transition-opacity opacity-0 group-hover:opacity-100" />
+
+              <div className="relative inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 mb-4">
+                <Target size={13} className="text-blue-400" />
+                <span className="text-[11px] font-mono font-medium uppercase tracking-wider text-blue-300">
+                  Analyze Problem
+                </span>
               </div>
+
+              <p className="relative text-sm text-slate-400 mb-4 leading-relaxed">
+                Paste your Smart India Hackathon problem statement here.
+                We&rsquo;ll extract the engineering reality.
+              </p>
 
               <textarea
-                className="w-full h-56 lg:h-72 bg-transparent p-5 text-sm font-mono text-zinc-300 focus:outline-none resize-none placeholder:text-zinc-700 leading-relaxed"
-                placeholder="Paste SIH problem description here..."
+                className="relative w-full h-48 bg-black/40 border border-white/10 rounded-xl p-3.5 text-sm text-slate-200 focus:ring-2 focus:ring-blue-500/60 focus:border-blue-500/40 outline-none resize-none mb-4 font-mono placeholder:text-slate-600 transition-shadow"
+                placeholder="Paste problem description, requirements, or upload PDF (coming soon)..."
                 value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
+                onChange={(event) => setInputText(event.target.value)}
               />
 
-              <div className="p-4 border-t border-white/5 bg-[#111]/50 backdrop-blur-md">
-                <button
-                  type="button"
-                  onClick={handleAnalyze}
-                  disabled={isAnalyzing || !inputText.trim()}
-                  className="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-3 rounded-xl transition-all shadow-[0_0_20px_rgba(37,99,235,0.2)] hover:shadow-[0_0_30px_rgba(37,99,235,0.4)] flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
-                >
-                  {isAnalyzing ? (
-                    <><Loader2 size={18} className="animate-spin mr-2" /> Deconstructing Specs...</>
-                  ) : (
-                    <><BrainCircuit size={18} className="mr-2" /> Generate Execution Plan</>
-                  )}
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={handleAnalyze}
+                disabled={isAnalyzing || !inputText.trim()}
+                className="relative w-full bg-blue-500 hover:bg-blue-400 text-white font-medium py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-[0_0_25px_rgba(59,130,246,0.35)] hover:shadow-[0_0_30px_rgba(59,130,246,0.5)] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
+              >
+                {isAnalyzing ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    Analyzing Specs...
+                  </>
+                ) : (
+                  <>
+                    <BrainCircuit size={18} />
+                    Generate Execution Plan
+                  </>
+                )}
+              </button>
             </div>
 
             {error && (
-              <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-5 flex items-start gap-3 backdrop-blur-sm">
-                <ShieldAlert size={18} className="text-red-400 mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-sm font-semibold text-red-400">Analysis failed</p>
-                  <p className="text-xs text-red-400/80 mt-1 leading-relaxed">{error}</p>
+              <div className="bg-red-950/30 border border-red-900/60 rounded-2xl p-5">
+                <div className="flex items-start gap-3">
+                  <ShieldAlert
+                    size={18}
+                    className="text-red-400 mt-0.5 flex-shrink-0"
+                  />
+
+                  <div>
+                    <p className="text-sm font-semibold text-red-300">
+                      Analysis failed
+                    </p>
+
+                    <p className="text-sm text-red-200/80 mt-1 break-words">
+                      {error}
+                    </p>
+                  </div>
                 </div>
               </div>
             )}
 
             {!analysis && !isAnalyzing && !error && (
-              <div className="border border-white/5 border-dashed rounded-2xl p-8 text-center text-zinc-600 flex flex-col items-center">
-                <Layers size={32} className="mb-4 opacity-50" />
-                <p className="text-sm">Enter a problem statement to generate architecture, risk analysis, and team fit scores.</p>
-                <p className="text-xs mt-2 font-mono">Status: Standby</p>
+              <div className="bg-white/[0.02] border border-white/10 border-dashed rounded-2xl p-6 text-center text-slate-500">
+                <Layers size={28} className="mx-auto mb-3 opacity-40" />
+
+                <p className="text-sm leading-relaxed">
+                  Enter a problem statement to generate architecture, risk
+                  analysis, and team fit scores.
+                </p>
               </div>
             )}
           </div>
 
-          <div className="xl:col-span-8">
+          {/* Right Column */}
+          <div className="lg:col-span-8">
             {isAnalyzing && (
-              <div className="h-full min-h-[500px] flex flex-col items-center justify-center text-zinc-500 space-y-6">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-blue-500 blur-xl opacity-20 rounded-full animate-pulse"></div>
-                  <Loader2 size={48} className="animate-spin text-blue-500 relative z-10" />
-                </div>
-                <p className="animate-pulse font-mono text-sm tracking-widest uppercase">Processing Request...</p>
+              <div className="h-full flex flex-col items-center justify-center text-slate-400 space-y-4 py-24">
+                <Loader2 size={40} className="animate-spin text-blue-500" />
+
+                <p className="animate-pulse font-medium text-sm">
+                  Deconstructing problem requirements...
+                </p>
               </div>
             )}
 
             {analysis && !isAnalyzing && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-8 duration-700">
-                <div className="bg-[#0a0a0a] border border-white/10 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-8 opacity-5 text-white pointer-events-none transform translate-x-1/4 -translate-y-1/4">
-                    <Cpu size={200} strokeWidth={1} />
+              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 sm:p-7 shadow-2xl relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-6 opacity-[0.06]">
+                    <Cpu size={120} />
                   </div>
-                  <div className="relative z-10">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-blue-500 bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20 mb-4 inline-block">
-                      {analysis.identity.domain}
-                    </span>
-                    <h2 className="text-3xl md:text-4xl font-semibold text-white mb-4 tracking-tight leading-tight">
-                      {analysis.identity.title}
-                    </h2>
-                    <p className="text-zinc-400 text-sm md:text-base border-l-2 border-zinc-800 pl-4 py-1 leading-relaxed max-w-3xl">
-                      {analysis.identity.coreProblem}
-                    </p>
+
+                  <div className="flex justify-between items-start mb-4 relative z-10">
+                    <div>
+                      <span className="inline-block text-[11px] font-mono font-semibold uppercase tracking-wider text-blue-400 mb-2">
+                        {analysis.identity.domain}
+                      </span>
+
+                      <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2 leading-tight tracking-tight">
+                        {analysis.identity.title}
+                      </h2>
+                    </div>
                   </div>
+
+                  <p className="text-slate-400 text-sm border-l-2 border-blue-500/40 pl-4 relative z-10 leading-relaxed">
+                    {analysis.identity.coreProblem}
+                  </p>
                 </div>
 
-                <div className="flex overflow-x-auto hide-scrollbar gap-2 p-1 bg-zinc-900/50 rounded-2xl border border-white/5 w-fit">
-                  <TabButton id="scorecard" icon={TrendingUp} label="Scorecard" activeTab={activeTab} setActiveTab={setActiveTab} />
-                  <TabButton id="engineering" icon={Server} label="Engineering Plan" activeTab={activeTab} setActiveTab={setActiveTab} />
-                  <TabButton id="skills" icon={Users} label="Team & Stack" activeTab={activeTab} setActiveTab={setActiveTab} />
-                  <TabButton id="ai" icon={Code2} label="AI & Vibe Coding" activeTab={activeTab} setActiveTab={setActiveTab} />
-                  <TabButton id="risks" icon={ShieldAlert} label="Verdict & Risks" activeTab={activeTab} setActiveTab={setActiveTab} />
+                <div className="flex overflow-x-auto hide-scrollbar gap-1 p-1.5 rounded-full border border-white/10 bg-white/[0.02] w-fit max-w-full">
+                  <TabButton
+                    id="scorecard"
+                    icon={TrendingUp}
+                    label="Scorecard"
+                    activeTab={activeTab}
+                    setActiveTab={setActiveTab}
+                  />
+
+                  <TabButton
+                    id="engineering"
+                    icon={Server}
+                    label="Engineering Plan"
+                    activeTab={activeTab}
+                    setActiveTab={setActiveTab}
+                  />
+
+                  <TabButton
+                    id="skills"
+                    icon={Users}
+                    label="Team & Stack"
+                    activeTab={activeTab}
+                    setActiveTab={setActiveTab}
+                  />
+
+                  <TabButton
+                    id="ai"
+                    icon={Code2}
+                    label="AI & Vibe Coding"
+                    activeTab={activeTab}
+                    setActiveTab={setActiveTab}
+                  />
+
+                  <TabButton
+                    id="risks"
+                    icon={ShieldAlert}
+                    label="Verdict & Risks"
+                    activeTab={activeTab}
+                    setActiveTab={setActiveTab}
+                  />
                 </div>
 
-                <div className="bg-transparent min-h-[400px]">
-                  {activeTab === "scorecard" && <ScorecardTab scorecard={analysis.scorecard} teamFit={analysis.teamFit} />}
-                  {activeTab === "engineering" && <EngineeringTab engineering={analysis.engineeringInterpretation} taskAllocation={analysis.taskAllocation} />}
-                  {activeTab === "skills" && <SkillsTab teamAndSkills={analysis.teamAndSkills} techStack={analysis.techStack} skillGapRecommendations={analysis.skillGapRecommendations} />}
-                  {activeTab === "ai" && <AiVibeTab aiAndVibeCoding={analysis.aiAndVibeCoding} aiVibePotential={analysis.scorecard.aiVibePotential} />}
-                  {activeTab === "risks" && <VerdictTab verdict={analysis.verdict} risks={analysis.risks} />}
+                <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 sm:p-7 min-h-[400px] shadow-2xl">
+                  {activeTab === "scorecard" && (
+                    <ScorecardTab
+                      scorecard={analysis.scorecard}
+                      teamFit={analysis.teamFit}
+                    />
+                  )}
+
+                  {activeTab === "engineering" && (
+                    <EngineeringTab
+                      engineering={analysis.engineeringInterpretation}
+                      taskAllocation={analysis.taskAllocation}
+                    />
+                  )}
+
+                  {activeTab === "skills" && (
+                    <SkillsTab
+                      teamAndSkills={analysis.teamAndSkills}
+                      techStack={analysis.techStack}
+                      skillGapRecommendations={analysis.skillGapRecommendations}
+                    />
+                  )}
+
+                  {activeTab === "ai" && (
+                    <AiVibeTab
+                      aiAndVibeCoding={analysis.aiAndVibeCoding}
+                      aiVibePotential={analysis.scorecard.aiVibePotential}
+                    />
+                  )}
+
+                  {activeTab === "risks" && (
+                    <VerdictTab
+                      verdict={analysis.verdict}
+                      risks={analysis.risks}
+                    />
+                  )}
                 </div>
               </div>
             )}
